@@ -124,12 +124,6 @@ class Game:
         """End the game and set the winner."""
         self._game_over = True
         self._winner = self._current_player
-        self._current_player.record_game_played()
-        self._current_player.record_game_won()
-        
-        other_player = self._player2 if self._current_player == self._player1 else self._player1
-        if other_player:
-            other_player.record_game_played()
     
     def restart(self) -> None:
         """Restart the game with fresh scores."""
