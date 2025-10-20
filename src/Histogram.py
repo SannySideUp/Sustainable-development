@@ -1,3 +1,6 @@
+from collections import Counter
+
+
 class Histogram:
     """Simple ASCII histogram for dice rolls and turn totals."""
     def __init__(self):
