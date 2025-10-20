@@ -1,3 +1,8 @@
+import json
+from datetime import datetime, timezone
+from typing import List, Dict, Optional
+
+
 class HighScore:
     """Manages persistent high score / statistics JSON file.
     Structure: { player_id: { 'name':..., 'games_played':n, 'wins':n, 'losses':n, 'total_score':n, 'created':date, 'last_played':date } }
@@ -29,7 +34,7 @@ class HighScore:
         """Ensure a player exists in the store. player is Player object."""
         pid = player.player_id
         if pid not in self.data:
-            now = datetime.datetime.utcnow().isoformat()
+            now = datetime.now(timezone.utc).isoformat()
             self.data[pid] = {
                 'name': player.name,
                 'games_played': 0,
@@ -46,7 +51,7 @@ class HighScore:
             self._save()
 
     def record_game(self, winner_player, loser_player, winner_score, loser_score):
-        now = datetime.datetime.utcnow().isoformat()
+        now = datetime.now(timezone.utc).isoformat()
         for p, won, sc_other in [(winner_player, True, loser_score), (loser_player, False, winner_score)]:
             pid = p.player_id
             if pid not in self.data:
