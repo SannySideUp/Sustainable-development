@@ -806,7 +806,7 @@ STRATEGY:
                 self._intelligence = DiceDifficulty()
             self._current_player = self._player1
             
-        self._highscore.ensure_player(self._player1)
+            self._highscore.ensure_player(self._player1)
             
             self.restart()
             return "Game set up for playing against computer! Starting game..."
