@@ -16,7 +16,7 @@ All tests use temporary files to avoid modifying real game data.
 import json
 import datetime
 import pytest
-from src.highscore import HighScore
+from src.high_score import HighScore
 
 
 # ----------------------------------------------------------------------
