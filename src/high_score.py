@@ -119,8 +119,14 @@ class HighScore:
             avg = (rec.get('total_score', 0) / games) if games else 0
             rows.append((rec.get('name','?'), pid, games, wins, losses, f"{winrate:.1f}%", f"{avg:.1f}"))
         rows.sort(key=lambda r: (r[3], float(r[6])), reverse=True)
+<<<<<<< Updated upstream
         print(" Name                        | Games | Wins | Losses | Win%  | Avg score | Player ID")
         print("-"*100)
+=======
+        header = " Name                        | Games | Wins | Losses | Win%  | Avg score | Player ID"
+        print(header)
+        print("-" * len(header))
+>>>>>>> Stashed changes
         for name, pid, games, wins, losses, winp, avg in rows:
             print(f" {name:25} | {games:5} | {wins:4} | {losses:6} | {winp:5} | {avg:9} | {pid[:8]}")
         print()
