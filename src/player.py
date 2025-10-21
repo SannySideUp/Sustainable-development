@@ -1,20 +1,12 @@
 """
 Player class for the Pig dice game.
 
-<<<<<<< Updated upstream
-This module contains the Player class which represents a player in the Pig game.
-=======
 This file contains the Player class which represents a player in the Pig game.
->>>>>>> Stashed changes
 Each player has a name and current score.
 """
 
 from typing import Optional
-<<<<<<< Updated upstream
-=======
 import uuid
->>>>>>> Stashed changes
-
 
 class Player:
     """
@@ -32,10 +24,7 @@ class Player:
         """
         self._name = name
         self._current_score = 0
-<<<<<<< Updated upstream
-=======
         self.player_id = str(uuid.uuid4())
->>>>>>> Stashed changes
     
     @property
     def name(self) -> str:
@@ -54,8 +43,6 @@ class Player:
             raise ValueError("Player name cannot be empty")
         self._name = new_name.strip()
     
-<<<<<<< Updated upstream
-=======
     def set_name_safely(self, new_name: str) -> bool:
         """
         Set a new name for the player safely.
@@ -88,7 +75,6 @@ class Player:
         except ValueError:
             return None
     
->>>>>>> Stashed changes
     @property
     def current_score(self) -> int:
         """Get the player's current score."""
@@ -109,8 +95,6 @@ class Player:
         """Reset the player's current score to 0."""
         self._current_score = 0
     
-<<<<<<< Updated upstream
-=======
     def set_score(self, score: int) -> None:
         """
         Set the player's current score directly.
@@ -122,7 +106,6 @@ class Player:
             raise ValueError("Score cannot be negative")
         self._current_score = score
     
->>>>>>> Stashed changes
     def __str__(self) -> str:
         """Return a string representation of the player."""
         return f"Player(name='{self._name}', score={self._current_score})"
