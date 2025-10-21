@@ -2,6 +2,10 @@ import json
 from datetime import datetime, timezone
 from typing import List, Dict, Optional
 
+HIGHSCORE_FILE = os.path.join(
+    os.path.dirname(__file__), '..', 'data', 'pig_highscore.json'
+)
+
 
 class HighScore:
     """Manages persistent high score / statistics JSON file.
