@@ -578,13 +578,13 @@ class Game:
         return {
             'current_player': self._current_player.name if self._current_player else "Computer",
             'player1_name': self._player1.name,
-            'player2_name': self._player2.name if self._player2 else None,
+            'player2_name': self._player2.name if self._player2 else "Computer",
             'player1_score': self._player1.current_score,
             'player2_score': self._player2.current_score if self._player2 else self._computer_score,
             'turn_score': self._turn_score,
             'game_over': self._game_over,
             'winner': "Computer" if self._computer_won else (self._winner.name if self._winner else None),
-            'winning_score': self.WINNING_SCORE
+            'score_to_win': self.WINNING_SCORE
         }
     
     def get_rules(self) -> str:
