@@ -3,7 +3,3 @@ black==24.10.0
 flake8==7.1.1
 mypy==1.11.2
 pytest-black==0.3.12
-sphinx
-sphinx-rtd-theme
-pylint
-graphviz
