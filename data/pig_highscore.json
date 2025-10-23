@@ -1,1 +1,20 @@
-
+{
+  "335de2f3-7cea-4bfa-b43b-a0271d6c61fe": {
+    "name": "tony",
+    "games_played": 2,
+    "wins": 1,
+    "losses": 1,
+    "total_score": 100,
+    "created": "2025-10-22T15:51:16.135949+00:00",
+    "last_played": "2025-10-22T16:10:36.796108+00:00"
+  },
+  "computer": {
+    "name": "Computer",
+    "games_played": 2,
+    "wins": 1,
+    "losses": 1,
+    "total_score": 138,
+    "created": "2025-10-22T16:08:42.085876+00:00",
+    "last_played": "2025-10-22T16:10:36.796108+00:00"
+  }
+}
