@@ -38,14 +38,15 @@ Each difficulty level defines:
 - A per-turn cap to prevent unrealistic high turns
 - A small, randomized chance of failure even on high levels (for realism)
 
-  | Difficulty     | Rolls / Turn | Hold Threshold | Max Cap | Risk Style  | Behavior                        |
-| -------------- | ------------ | -------------- | ------- | ----------- | ------------------------------- |
-| **Noob**       | 2            | 8              | 12      | 💤 Safe     | Plays short turns, rarely busts |
-| **Casual**     | 4            | 12             | 18      | 😌 Mild     | Slightly riskier, holds earlier |
-| **Challenger** | 6            | 16             | 22      | ⚔️ Balanced | Even risk-reward                |
-| **Veteran**    | 8            | 20             | 26      | 🎯 Moderate | Experienced player level        |
-| **Elite**      | 10           | 22             | 28      | 🔥 High     | Pushes limits, still cautious   |
-| **Legendary**  | 12           | 24             | 32      | 💀 Extreme  | Aggressive, near-perfect play   |
+| Difficulty | Rolls / Turn | Hold Threshold | Max Cap | Risk Style | Behavior |
+|-------------|--------------|----------------|----------|-------------|-----------|
+| **Noob** | 2 | 8 | 12 | 💤 Safe | Plays short turns, rarely busts |
+| **Casual** | 4 | 12 | 18 | 😌 Mild | Slightly riskier, holds earlier |
+| **Challenger** | 6 | 16 | 22 | ⚔️ Balanced | Even risk-reward |
+| **Veteran** | 8 | 20 | 26 | 🎯 Moderate | Experienced player level |
+| **Elite** | 10 | 22 | 28 | 🔥 High | Pushes limits, still cautious |
+| **Legendary** | 12 | 24 | 32 | 💀 Extreme | Aggressive, near-perfect play |
+
 
 
 
