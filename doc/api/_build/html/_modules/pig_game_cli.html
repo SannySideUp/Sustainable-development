@@ -1,0 +1,327 @@
+<!DOCTYPE html>
+
+<html lang="en" data-content_root="../">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>pig_game_cli &#8212; Sustainable Development Project 1.0 documentation</title>
+    <link rel="stylesheet" type="text/css" href="../_static/pygments.css?v=d1102ebc" />
+    <link rel="stylesheet" type="text/css" href="../_static/basic.css?v=b08954a9" />
+    <link rel="stylesheet" type="text/css" href="../_static/alabaster.css?v=27fed22d" />
+    <script src="../_static/documentation_options.js?v=f2a433a1"></script>
+    <script src="../_static/doctools.js?v=9bcbadda"></script>
+    <script src="../_static/sphinx_highlight.js?v=dc90522c"></script>
+    <link rel="index" title="Index" href="../genindex.html" />
+    <link rel="search" title="Search" href="../search.html" />
+   
+  <link rel="stylesheet" href="../_static/custom.css" type="text/css" />
+  
+
+  
+  
+
+  </head><body>
+  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          
+
+          <div class="body" role="main">
+            
+  <h1>Source code for pig_game_cli</h1><div class="highlight"><pre>
+<span></span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">Command-line interface for the Pig Dice Game.</span>
+
+<span class="sd">This module contains the PigGameCLI class that implements a command-line interface</span>
+<span class="sd">using Python&#39;s cmd module for the terminal-based Pig dice game.</span>
+<span class="sd">&quot;&quot;&quot;</span>
+
+<span class="kn">import</span> <span class="nn">cmd</span>
+<span class="kn">from</span> <span class="nn">typing</span> <span class="kn">import</span> <span class="n">Optional</span>
+<span class="kn">from</span> <span class="nn">src.player</span> <span class="kn">import</span> <span class="n">Player</span>
+<span class="kn">from</span> <span class="nn">src.game</span> <span class="kn">import</span> <span class="n">Game</span>
+<span class="kn">from</span> <span class="nn">src.constants</span> <span class="kn">import</span> <span class="o">*</span>
+<span class="kn">from</span> <span class="nn">src.menu_handlers</span> <span class="kn">import</span> <span class="n">MenuHandlers</span>
+<span class="kn">from</span> <span class="nn">src.game_handlers</span> <span class="kn">import</span> <span class="n">GameHandlers</span>
+<span class="kn">from</span> <span class="nn">src.display_utils</span> <span class="kn">import</span> <span class="n">DisplayUtils</span>
+
+
+<div class="viewcode-block" id="PigGameCLI">
+<a class="viewcode-back" href="../index.html#pig_game_cli.PigGameCLI">[docs]</a>
+<span class="k">class</span> <span class="nc">PigGameCLI</span><span class="p">(</span><span class="n">cmd</span><span class="o">.</span><span class="n">Cmd</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Command-line interface for the Pig Dice Game.&quot;&quot;&quot;</span>
+    
+    <span class="n">intro</span> <span class="o">=</span> <span class="n">GAME_INTRO</span>
+    <span class="n">prompt</span> <span class="o">=</span> <span class="n">CLI_PROMPT</span>
+    <span class="n">game</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">Game</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span>
+    
+    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Initialize the CLI.&quot;&quot;&quot;</span>
+        <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">()</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">player1</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">Player</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_current_state</span> <span class="o">=</span> <span class="n">STATE_MENU</span>
+        
+        <span class="c1"># Initialize handlers</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">menu_handlers</span> <span class="o">=</span> <span class="n">MenuHandlers</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">game_handlers</span> <span class="o">=</span> <span class="n">GameHandlers</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">display_utils</span> <span class="o">=</span> <span class="n">DisplayUtils</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span>
+        
+        <span class="c1"># Dynamically create do_1 through do_7 methods</span>
+        <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="mi">8</span><span class="p">):</span>
+            <span class="nb">setattr</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="sa">f</span><span class="s1">&#39;do_</span><span class="si">{</span><span class="n">i</span><span class="si">}</span><span class="s1">&#39;</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">_create_menu_handler</span><span class="p">(</span><span class="n">i</span><span class="p">))</span>
+    
+    <span class="k">def</span> <span class="nf">_create_menu_handler</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">choice</span><span class="p">:</span> <span class="nb">int</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Create a dynamic menu handler for the given choice.&quot;&quot;&quot;</span>
+        <span class="k">def</span> <span class="nf">handler</span><span class="p">(</span><span class="n">args</span><span class="p">):</span>
+            <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">_current_state</span> <span class="o">==</span> <span class="n">STATE_SETTINGS</span><span class="p">:</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">menu_handlers</span><span class="o">.</span><span class="n">handle_settings_choice</span><span class="p">(</span><span class="n">choice</span><span class="p">)</span>
+            <span class="k">elif</span> <span class="bp">self</span><span class="o">.</span><span class="n">_current_state</span> <span class="o">==</span> <span class="n">STATE_DIFFICULTY</span><span class="p">:</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">menu_handlers</span><span class="o">.</span><span class="n">handle_difficulty_choice</span><span class="p">(</span><span class="n">choice</span><span class="p">)</span>
+            <span class="k">elif</span> <span class="bp">self</span><span class="o">.</span><span class="n">_current_state</span> <span class="o">==</span> <span class="n">STATE_STATISTICS</span><span class="p">:</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">menu_handlers</span><span class="o">.</span><span class="n">handle_statistics_choice</span><span class="p">(</span><span class="n">choice</span><span class="p">)</span>
+            <span class="k">elif</span> <span class="bp">self</span><span class="o">.</span><span class="n">_current_state</span> <span class="o">==</span> <span class="n">STATE_HIGHSCORES</span><span class="p">:</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">menu_handlers</span><span class="o">.</span><span class="n">handle_highscores_choice</span><span class="p">(</span><span class="n">choice</span><span class="p">)</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="k">if</span> <span class="n">choice</span> <span class="o">==</span> <span class="mi">7</span><span class="p">:</span>
+                    <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">menu_handlers</span><span class="o">.</span><span class="n">handle_main_menu_choice</span><span class="p">(</span><span class="n">choice</span><span class="p">)</span>
+                <span class="k">else</span><span class="p">:</span>
+                    <span class="bp">self</span><span class="o">.</span><span class="n">menu_handlers</span><span class="o">.</span><span class="n">handle_main_menu_choice</span><span class="p">(</span><span class="n">choice</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">handler</span>
+    
+<div class="viewcode-block" id="PigGameCLI.do_start">
+<a class="viewcode-back" href="../index.html#pig_game_cli.PigGameCLI.do_start">[docs]</a>
+    <span class="k">def</span> <span class="nf">do_start</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">args</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Start the game by showing the main menu.&quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="bp">self</span><span class="o">.</span><span class="n">player1</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">player1</span> <span class="o">=</span> <span class="n">Player</span><span class="p">(</span><span class="n">DEFAULT_PLAYER_1_NAME</span><span class="p">)</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="bp">self</span><span class="o">.</span><span class="n">game</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">game</span> <span class="o">=</span> <span class="n">Game</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">player1</span><span class="p">)</span>
+        
+        <span class="bp">self</span><span class="o">.</span><span class="n">_current_state</span> <span class="o">=</span> <span class="n">STATE_MENU</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">display_utils</span><span class="o">.</span><span class="n">show_main_menu</span><span class="p">()</span></div>
+
+    
+<div class="viewcode-block" id="PigGameCLI.do_roll">
+<a class="viewcode-back" href="../index.html#pig_game_cli.PigGameCLI.do_roll">[docs]</a>
+    <span class="k">def</span> <span class="nf">do_roll</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">args</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Roll the dice during gameplay.&quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">game_handlers</span><span class="o">.</span><span class="n">handle_roll</span><span class="p">()</span></div>
+
+    
+<div class="viewcode-block" id="PigGameCLI.do_hold">
+<a class="viewcode-back" href="../index.html#pig_game_cli.PigGameCLI.do_hold">[docs]</a>
+    <span class="k">def</span> <span class="nf">do_hold</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">args</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Hold your turn during gameplay.&quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">game_handlers</span><span class="o">.</span><span class="n">handle_hold</span><span class="p">()</span></div>
+
+    
+<div class="viewcode-block" id="PigGameCLI.do_status">
+<a class="viewcode-back" href="../index.html#pig_game_cli.PigGameCLI.do_status">[docs]</a>
+    <span class="k">def</span> <span class="nf">do_status</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">args</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Show current game status.&quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">game_handlers</span><span class="o">.</span><span class="n">handle_status</span><span class="p">()</span></div>
+
+    
+<div class="viewcode-block" id="PigGameCLI.do_restart">
+<a class="viewcode-back" href="../index.html#pig_game_cli.PigGameCLI.do_restart">[docs]</a>
+    <span class="k">def</span> <span class="nf">do_restart</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">args</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Restart the current game.&quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">game_handlers</span><span class="o">.</span><span class="n">handle_restart</span><span class="p">()</span></div>
+
+    
+<div class="viewcode-block" id="PigGameCLI.do_save">
+<a class="viewcode-back" href="../index.html#pig_game_cli.PigGameCLI.do_save">[docs]</a>
+    <span class="k">def</span> <span class="nf">do_save</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">args</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Save the current game.&quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">game_handlers</span><span class="o">.</span><span class="n">handle_save</span><span class="p">(</span><span class="n">args</span><span class="p">)</span></div>
+
+    
+<div class="viewcode-block" id="PigGameCLI.do_load">
+<a class="viewcode-back" href="../index.html#pig_game_cli.PigGameCLI.do_load">[docs]</a>
+    <span class="k">def</span> <span class="nf">do_load</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">args</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Load a saved game.&quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">game_handlers</span><span class="o">.</span><span class="n">handle_load</span><span class="p">(</span><span class="n">args</span><span class="p">)</span></div>
+
+    
+<div class="viewcode-block" id="PigGameCLI.do_cheat">
+<a class="viewcode-back" href="../index.html#pig_game_cli.PigGameCLI.do_cheat">[docs]</a>
+    <span class="k">def</span> <span class="nf">do_cheat</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">args</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Input a cheat code during gameplay.&quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">game_handlers</span><span class="o">.</span><span class="n">handle_cheat</span><span class="p">(</span><span class="n">args</span><span class="p">)</span></div>
+
+    
+<div class="viewcode-block" id="PigGameCLI.do_resume">
+<a class="viewcode-back" href="../index.html#pig_game_cli.PigGameCLI.do_resume">[docs]</a>
+    <span class="k">def</span> <span class="nf">do_resume</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">args</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Resume an active game.&quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">game_handlers</span><span class="o">.</span><span class="n">handle_resume</span><span class="p">()</span></div>
+
+    
+<div class="viewcode-block" id="PigGameCLI.do_computer_turn">
+<a class="viewcode-back" href="../index.html#pig_game_cli.PigGameCLI.do_computer_turn">[docs]</a>
+    <span class="k">def</span> <span class="nf">do_computer_turn</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">args</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Handle computer turn (internal use).&quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">game_handlers</span><span class="o">.</span><span class="n">handle_computer_turn</span><span class="p">()</span></div>
+
+    
+<div class="viewcode-block" id="PigGameCLI.do_help">
+<a class="viewcode-back" href="../index.html#pig_game_cli.PigGameCLI.do_help">[docs]</a>
+    <span class="k">def</span> <span class="nf">do_help</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">args</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Show help information.&quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">display_utils</span><span class="o">.</span><span class="n">show_help</span><span class="p">()</span></div>
+
+    
+<div class="viewcode-block" id="PigGameCLI.do_back">
+<a class="viewcode-back" href="../index.html#pig_game_cli.PigGameCLI.do_back">[docs]</a>
+    <span class="k">def</span> <span class="nf">do_back</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">args</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Go back to previous menu.&quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">_current_state</span> <span class="o">==</span> <span class="n">STATE_SETTINGS</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_current_state</span> <span class="o">=</span> <span class="n">STATE_MENU</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">display_utils</span><span class="o">.</span><span class="n">show_main_menu</span><span class="p">()</span>
+        <span class="k">elif</span> <span class="bp">self</span><span class="o">.</span><span class="n">_current_state</span> <span class="o">==</span> <span class="n">STATE_DIFFICULTY</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_current_state</span> <span class="o">=</span> <span class="n">STATE_SETTINGS</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">display_utils</span><span class="o">.</span><span class="n">show_settings_menu</span><span class="p">()</span>
+        <span class="k">elif</span> <span class="bp">self</span><span class="o">.</span><span class="n">_current_state</span> <span class="ow">in</span> <span class="p">[</span><span class="n">STATE_STATISTICS</span><span class="p">,</span> <span class="n">STATE_HIGHSCORES</span><span class="p">]:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_current_state</span> <span class="o">=</span> <span class="n">STATE_MENU</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">display_utils</span><span class="o">.</span><span class="n">show_main_menu</span><span class="p">()</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="nb">print</span><span class="p">(</span><span class="n">ALREADY_AT_MAIN_MENU</span><span class="p">)</span></div>
+
+    
+<div class="viewcode-block" id="PigGameCLI.do_menu">
+<a class="viewcode-back" href="../index.html#pig_game_cli.PigGameCLI.do_menu">[docs]</a>
+    <span class="k">def</span> <span class="nf">do_menu</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">args</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Go back to main menu.&quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_current_state</span> <span class="o">=</span> <span class="n">STATE_MENU</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">display_utils</span><span class="o">.</span><span class="n">show_main_menu</span><span class="p">()</span></div>
+
+    
+<div class="viewcode-block" id="PigGameCLI.do_quit">
+<a class="viewcode-back" href="../index.html#pig_game_cli.PigGameCLI.do_quit">[docs]</a>
+    <span class="k">def</span> <span class="nf">do_quit</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">args</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Exit the game.&quot;&quot;&quot;</span>
+        <span class="nb">print</span><span class="p">(</span><span class="n">THANKS_PLAYING_GAME</span><span class="p">)</span>
+        <span class="k">return</span> <span class="kc">True</span></div>
+
+    
+<div class="viewcode-block" id="PigGameCLI.do_exit">
+<a class="viewcode-back" href="../index.html#pig_game_cli.PigGameCLI.do_exit">[docs]</a>
+    <span class="k">def</span> <span class="nf">do_exit</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">args</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Exit the game.&quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">do_quit</span><span class="p">(</span><span class="n">args</span><span class="p">)</span></div>
+
+    
+<div class="viewcode-block" id="PigGameCLI.default">
+<a class="viewcode-back" href="../index.html#pig_game_cli.PigGameCLI.default">[docs]</a>
+    <span class="k">def</span> <span class="nf">default</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">line</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Handle unknown commands.&quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="n">line</span><span class="o">.</span><span class="n">strip</span><span class="p">()</span><span class="o">.</span><span class="n">isdigit</span><span class="p">():</span>
+            <span class="n">choice</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="n">line</span><span class="o">.</span><span class="n">strip</span><span class="p">())</span>
+            <span class="k">if</span> <span class="nb">hasattr</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="sa">f</span><span class="s1">&#39;do_</span><span class="si">{</span><span class="n">choice</span><span class="si">}</span><span class="s1">&#39;</span><span class="p">):</span>
+                <span class="nb">getattr</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="sa">f</span><span class="s1">&#39;do_</span><span class="si">{</span><span class="n">choice</span><span class="si">}</span><span class="s1">&#39;</span><span class="p">)(</span><span class="kc">None</span><span class="p">)</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="nb">print</span><span class="p">(</span><span class="n">UNKNOWN_COMMAND</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">line</span><span class="p">))</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="nb">print</span><span class="p">(</span><span class="n">UNKNOWN_COMMAND</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">line</span><span class="p">))</span></div>
+
+    
+    <span class="c1"># Delegate all display methods to display_utils</span>
+<div class="viewcode-block" id="PigGameCLI.show_main_menu">
+<a class="viewcode-back" href="../index.html#pig_game_cli.PigGameCLI.show_main_menu">[docs]</a>
+    <span class="k">def</span> <span class="nf">show_main_menu</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">display_utils</span><span class="o">.</span><span class="n">show_main_menu</span><span class="p">()</span></div>
+
+    
+<div class="viewcode-block" id="PigGameCLI.show_settings_menu">
+<a class="viewcode-back" href="../index.html#pig_game_cli.PigGameCLI.show_settings_menu">[docs]</a>
+    <span class="k">def</span> <span class="nf">show_settings_menu</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">display_utils</span><span class="o">.</span><span class="n">show_settings_menu</span><span class="p">()</span></div>
+
+    
+<div class="viewcode-block" id="PigGameCLI.show_difficulty_menu">
+<a class="viewcode-back" href="../index.html#pig_game_cli.PigGameCLI.show_difficulty_menu">[docs]</a>
+    <span class="k">def</span> <span class="nf">show_difficulty_menu</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">display_utils</span><span class="o">.</span><span class="n">show_difficulty_menu</span><span class="p">()</span></div>
+
+    
+<div class="viewcode-block" id="PigGameCLI.show_game_status">
+<a class="viewcode-back" href="../index.html#pig_game_cli.PigGameCLI.show_game_status">[docs]</a>
+    <span class="k">def</span> <span class="nf">show_game_status</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">display_utils</span><span class="o">.</span><span class="n">show_game_status</span><span class="p">()</span></div>
+
+    
+<div class="viewcode-block" id="PigGameCLI.show_game_over">
+<a class="viewcode-back" href="../index.html#pig_game_cli.PigGameCLI.show_game_over">[docs]</a>
+    <span class="k">def</span> <span class="nf">show_game_over</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">display_utils</span><span class="o">.</span><span class="n">show_game_over</span><span class="p">()</span></div>
+</div>
+
+</pre></div>
+
+          </div>
+          
+        </div>
+      </div>
+      <div class="sphinxsidebar" role="navigation" aria-label="Main">
+        <div class="sphinxsidebarwrapper">
+<h1 class="logo"><a href="../index.html">Sustainable Development Project</a></h1>
+
+
+
+
+
+
+
+
+
+<search id="searchbox" style="display: none" role="search">
+    <div class="searchformwrapper">
+    <form class="search" action="../search.html" method="get">
+      <input type="text" name="q" aria-labelledby="searchlabel" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" placeholder="Search"/>
+      <input type="submit" value="Go" />
+    </form>
+    </div>
+</search>
+<script>document.getElementById('searchbox').style.display = "block"</script><h3>Navigation</h3>
+<p class="caption" role="heading"><span class="caption-text">Contents:</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../modules.html">Sustainable-development</a></li>
+</ul>
+
+<div class="relations">
+<h3>Related Topics</h3>
+<ul>
+  <li><a href="../index.html">Documentation overview</a><ul>
+  <li><a href="index.html">Module code</a><ul>
+  </ul></li>
+  </ul></li>
+</ul>
+</div>
+
+
+
+
+
+
+
+
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="footer">
+      &#169;.
+      
+      |
+      Powered by <a href="https://www.sphinx-doc.org/">Sphinx 8.2.3</a>
+      &amp; <a href="https://alabaster.readthedocs.io">Alabaster 1.0.0</a>
+      
+    </div>
+
+    
+
+    
+  </body>
+</html>
