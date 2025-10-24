@@ -1,394 +1,259 @@
 """
-unit tests for the DisplayUtils class.
-
-This file contains extensive unit tests for the DisplayUtils class to ensure
-all display functionality works correctly and meets coverage requirements.
+Unit tests for the DisplayUtils class, focusing on verifying that the correct
+information is formatted and printed based on the CLI and Game states.
 """
 
 import pytest
-from unittest.mock import Mock, patch, MagicMock
-from src.display_utils import DisplayUtils
-from src.constants import *
+from unittest.mock import MagicMock, patch
+
+# --- Setup Paths ---
+DISPLAY_UTILS_PATH = "src.cli.display_utils"
+MOCK_CONSTANTS_PATH = f"{DISPLAY_UTILS_PATH}.constants"
 
 
-class TestDisplayUtils:
-    """Test cases for the DisplayUtils class."""
-    
-    def setup_method(self):
-        """Set up test fixtures."""
-        self.mock_cli = Mock()
-        self.mock_game = Mock()
-        self.mock_cli.game = self.mock_game
-        self.mock_cli._current_state = STATE_MENU
-        self.display_utils = DisplayUtils(self.mock_cli)
-    
-    def test_display_utils_initialization(self):
-        """Test DisplayUtils initialization."""
-        assert self.display_utils.cli == self.mock_cli
-    
-    def test_show_main_menu_with_game(self):
-        """Test show_main_menu with game initialized."""
-        self.mock_game.show_main_menu.return_value = "Main Menu Display"
-        self.mock_game.game_over = False
-        self.mock_cli._current_state = STATE_PLAYING
-        self.mock_game._turn_history = [{"test": "data"}]
-        self.mock_game._dice_history = [1, 2, 3]
-        
-        with patch('builtins.print') as mock_print:
-            self.display_utils.show_main_menu()
-            
-            mock_print.assert_called()
-            self.mock_game.show_main_menu.assert_called_once()
-    
-    def test_show_main_menu_without_active_game(self):
-        """Test show_main_menu without active game."""
-        self.mock_game.show_main_menu.return_value = "Main Menu Display"
-        self.mock_game.game_over = True
-        self.mock_cli._current_state = STATE_MENU
-        self.mock_game._turn_history = []
-        self.mock_game._dice_history = []
-        
-        with patch('builtins.print') as mock_print:
-            self.display_utils.show_main_menu()
-            
-            mock_print.assert_called()
-            self.mock_game.show_main_menu.assert_called_once()
-    
-    def test_show_main_menu_with_none_game(self):
-        """Test show_main_menu with None game."""
-        self.mock_cli.game = None
-        
-        with pytest.raises(AttributeError):
-            self.display_utils.show_main_menu()
-    
-    def test_show_settings_menu(self):
-        """Test show_settings_menu."""
-        self.mock_game.show_settings_menu.return_value = "Settings Menu Display"
-        
-        with patch('builtins.print') as mock_print:
-            self.display_utils.show_settings_menu()
-            
-            mock_print.assert_called()
-            self.mock_game.show_settings_menu.assert_called_once()
-    
-    def test_show_settings_menu_with_none_game(self):
-        """Test show_settings_menu with None game."""
-        self.mock_cli.game = None
-        
-        with pytest.raises(AttributeError):
-            self.display_utils.show_settings_menu()
-    
-    def test_show_difficulty_menu(self):
-        """Test show_difficulty_menu."""
-        self.mock_game.show_difficulty_menu.return_value = "Difficulty Menu Display"
-        
-        with patch('builtins.print') as mock_print:
-            self.display_utils.show_difficulty_menu()
-            
-            mock_print.assert_called()
-            self.mock_game.show_difficulty_menu.assert_called_once()
-    
-    def test_show_difficulty_menu_with_none_game(self):
-        """Test show_difficulty_menu with None game."""
-        self.mock_cli.game = None
-        
-        with pytest.raises(AttributeError):
-            self.display_utils.show_difficulty_menu()
-    
-    def test_show_game_status_with_game(self):
-        """Test show_game_status with initialized game."""
-        game_state = {
-            'player1_name': 'Player1',
-            'player1_score': 25,
-            'player2_name': 'Player2',
-            'player2_score': 30,
-            'current_player': 'Player1',
-            'turn_score': 15,
-            'score_to_win': 100
-        }
-        self.mock_game.get_game_state.return_value = game_state
-        
-        with patch('builtins.print') as mock_print:
-            self.display_utils.show_game_status()
-            
-            mock_print.assert_called()
-            self.mock_game.get_game_state.assert_called_once()
-    
-    def test_show_game_status_without_player2(self):
-        """Test show_game_status without player2."""
-        game_state = {
-            'player1_name': 'Player1',
-            'player1_score': 25,
-            'player2_name': None,
-            'player2_score': 0,
-            'current_player': 'Player1',
-            'turn_score': 15,
-            'score_to_win': 100
-        }
-        self.mock_game.get_game_state.return_value = game_state
-        
-        with patch('builtins.print') as mock_print:
-            self.display_utils.show_game_status()
-            
-            mock_print.assert_called()
-    
-    def test_show_game_status_with_none_game(self):
-        """Test show_game_status with None game."""
-        self.mock_cli.game = None
-        
-        with patch('builtins.print') as mock_print:
-            self.display_utils.show_game_status()
-            
-            mock_print.assert_called()
-    
-    def test_show_game_over_with_game(self):
-        """Test show_game_over with initialized game."""
-        game_state = {
-            'winner': 'Player1'
-        }
-        self.mock_game.get_game_state.return_value = game_state
-        
-        with patch('builtins.print') as mock_print:
-            self.display_utils.show_game_over()
-            
-            mock_print.assert_called()
-            self.mock_game.get_game_state.assert_called_once()
-    
-    def test_show_game_over_with_none_game(self):
-        """Test show_game_over with None game."""
-        self.mock_cli.game = None
-        
-        with patch('builtins.print') as mock_print:
-            self.display_utils.show_game_over()
-            
-            mock_print.assert_called()
-    
-    def test_show_help_playing_state(self):
-        """Test show_help in playing state."""
-        self.mock_cli._current_state = STATE_PLAYING
-        
-        with patch('builtins.print') as mock_print:
-            self.display_utils.show_help()
-            
-            mock_print.assert_called()
-    
-    def test_show_help_menu_state(self):
-        """Test show_help in menu state."""
-        self.mock_cli._current_state = STATE_MENU
-        
-        with patch('builtins.print') as mock_print:
-            self.display_utils.show_help()
-            
-            mock_print.assert_called()
-    
-    def test_show_help_other_state(self):
-        """Test show_help in other state."""
-        self.mock_cli._current_state = STATE_SETTINGS
-        
-        with patch('builtins.print') as mock_print:
-            self.display_utils.show_help()
-            
-            mock_print.assert_called()
-    
-    def test_active_game_note_display_conditions(self):
-        """Test conditions for displaying active game note."""
-        # Test case 1: Game over - should not show note
-        self.mock_game.game_over = True
-        self.mock_cli._current_state = STATE_PLAYING
-        self.mock_game._turn_history = [{"test": "data"}]
-        self.mock_game._dice_history = [1, 2, 3]
-        
-        with patch('builtins.print') as mock_print:
-            self.display_utils.show_main_menu()
-            calls = mock_print.call_args_list
-            # Should not contain active game note
-            assert not any(ACTIVE_GAME_NOTE in str(call) for call in calls)
-        
-        # Test case 2: Not in playing state - should not show note
-        self.mock_game.game_over = False
-        self.mock_cli._current_state = STATE_MENU
-        self.mock_game._turn_history = [{"test": "data"}]
-        self.mock_game._dice_history = [1, 2, 3]
-        
-        with patch('builtins.print') as mock_print:
-            self.display_utils.show_main_menu()
-            calls = mock_print.call_args_list
-            # Should not contain active game note
-            assert not any(ACTIVE_GAME_NOTE in str(call) for call in calls)
-        
-        # Test case 3: No turn history - should not show note
-        self.mock_game.game_over = False
-        self.mock_cli._current_state = STATE_PLAYING
-        self.mock_game._turn_history = []
-        self.mock_game._dice_history = [1, 2, 3]
-        
-        with patch('builtins.print') as mock_print:
-            self.display_utils.show_main_menu()
-            calls = mock_print.call_args_list
-            # Should not contain active game note
-            assert not any(ACTIVE_GAME_NOTE in str(call) for call in calls)
-        
-        # Test case 4: No dice history - should not show note
-        self.mock_game.game_over = False
-        self.mock_cli._current_state = STATE_PLAYING
-        self.mock_game._turn_history = [{"test": "data"}]
-        self.mock_game._dice_history = []
-        
-        with patch('builtins.print') as mock_print:
-            self.display_utils.show_main_menu()
-            calls = mock_print.call_args_list
-            # Should not contain active game note
-            assert not any(ACTIVE_GAME_NOTE in str(call) for call in calls)
-    
-    def test_game_status_formatting(self):
-        """Test game status formatting with various data."""
-        test_cases = [
-            {
-                'player1_name': 'Alice',
-                'player1_score': 0,
-                'player2_name': 'Bob',
-                'player2_score': 0,
-                'current_player': 'Alice',
-                'turn_score': 0,
-                'score_to_win': 100
-            },
-            {
-                'player1_name': 'Player1',
-                'player1_score': 50,
-                'player2_name': 'Computer',
-                'player2_score': 75,
-                'current_player': 'Computer',
-                'turn_score': 25,
-                'score_to_win': 100
-            },
-            {
-                'player1_name': 'TestPlayer',
-                'player1_score': 99,
-                'player2_name': None,
-                'player2_score': 0,
-                'current_player': 'TestPlayer',
-                'turn_score': 1,
-                'score_to_win': 100
-            }
-        ]
-        
-        for game_state in test_cases:
-            self.mock_game.get_game_state.return_value = game_state
-            
-            with patch('builtins.print') as mock_print:
-                self.display_utils.show_game_status()
-                
-                mock_print.assert_called()
-                # Verify that the game state was accessed
-                self.mock_game.get_game_state.assert_called()
-    
-    def test_game_over_formatting(self):
-        """Test game over formatting with different winners."""
-        winners = ['Player1', 'Computer', 'Alice', 'Bob', 'TestPlayer']
-        
-        for winner in winners:
-            game_state = {'winner': winner}
-            self.mock_game.get_game_state.return_value = game_state
-            
-            with patch('builtins.print') as mock_print:
-                self.display_utils.show_game_over()
-                
-                mock_print.assert_called()
-                self.mock_game.get_game_state.assert_called()
-    
-    def test_display_utils_with_missing_attributes(self):
-        """Test DisplayUtils with missing game attributes."""
-        # Test with game that has missing attributes
-        self.mock_game._turn_history = None
-        self.mock_game._dice_history = None
-        
-        with patch('builtins.print') as mock_print:
-            self.display_utils.show_main_menu()
-            
-            # Should handle gracefully without crashing
-            mock_print.assert_called()
-    
-    def test_display_utils_error_handling(self):
-        """Test DisplayUtils error handling."""
-        # Test with game that raises exceptions
-        self.mock_game.show_main_menu.side_effect = Exception("Test error")
-        
-        with patch('builtins.print') as mock_print:
-            # Should raise the exception since there's no try-catch
-            with pytest.raises(Exception, match="Test error"):
-                self.display_utils.show_main_menu()
-    
-    def test_all_display_methods_call_print(self):
-        """Test that all display methods call print."""
-        methods_to_test = [
-            'show_main_menu', 'show_settings_menu', 'show_difficulty_menu',
-            'show_game_status', 'show_game_over', 'show_help'
-        ]
-        
-        for method_name in methods_to_test:
-            method = getattr(self.display_utils, method_name)
-            
-            with patch('builtins.print') as mock_print:
-                try:
-                    method()
-                    mock_print.assert_called()
-                except Exception:
-                    # Some methods might raise exceptions with None game
-                    pass
-    
-    def test_display_utils_state_handling(self):
-        """Test DisplayUtils handles different CLI states."""
-        states = [STATE_MENU, STATE_PLAYING, STATE_GAME_OVER, STATE_SETTINGS, 
-                 STATE_DIFFICULTY, STATE_STATISTICS, STATE_HIGHSCORES]
-        
-        for state in states:
-            self.mock_cli._current_state = state
-            
-            with patch('builtins.print') as mock_print:
-                self.display_utils.show_help()
-                mock_print.assert_called()
-    
-    def test_display_utils_with_complex_game_state(self):
-        """Test DisplayUtils with complex game state."""
-        complex_game_state = {
-            'player1_name': 'Very Long Player Name That Might Cause Issues',
-            'player1_score': 999999,
-            'player2_name': 'Another Player With Special Characters!@#$%',
-            'player2_score': 0,
-            'current_player': 'Very Long Player Name That Might Cause Issues',
-            'turn_score': 12345,
-            'score_to_win': 1000000
-        }
-        
-        self.mock_game.get_game_state.return_value = complex_game_state
-        
-        with patch('builtins.print') as mock_print:
-            self.display_utils.show_game_status()
-            
-            mock_print.assert_called()
-            self.mock_game.get_game_state.assert_called_once()
-    
-    def test_display_utils_method_signatures(self):
-        """Test that all display methods have correct signatures."""
-        # Test that methods exist and are callable
-        methods = [
-            'show_main_menu', 'show_settings_menu', 'show_difficulty_menu',
-            'show_game_status', 'show_game_over', 'show_help'
-        ]
-        
-        for method_name in methods:
-            assert hasattr(self.display_utils, method_name)
-            method = getattr(self.display_utils, method_name)
-            assert callable(method)
-    
-    def test_display_utils_initialization_with_none_cli(self):
-        """Test DisplayUtils initialization with None CLI."""
-        utils = DisplayUtils(None)
-        assert utils.cli is None
-    
-    def test_display_utils_initialization_with_invalid_cli(self):
-        """Test DisplayUtils initialization with invalid CLI."""
-        invalid_cli = "not a cli object"
-        
-        utils = DisplayUtils(invalid_cli)
-        assert utils.cli == invalid_cli
+# --- Fixtures for Mocking Dependencies ---
+
+@pytest.fixture
+def mock_constants_display():
+    """Mocks the constants module used by DisplayUtils."""
+    mock = MagicMock()
+    # State constants
+    mock.STATE_PLAYING = "playing"
+    mock.STATE_MENU = "menu"
+
+    # Message constants (simplified for testing)
+    mock.GAME_NOT_INITIALIZED = "Error: Game not initialized."
+    mock.ACTIVE_GAME_NOTE = "[Note: Active game available. Use 'resume' or 'restart']"
+    mock.MAIN_MENU_COMMANDS = "Menu Commands: [new, load, stats, settings, quit, help]"
+    mock.SETTINGS_MENU_COMMANDS = "Settings Commands: [name, difficulty, back]"
+    mock.DIFFICULTY_MENU_COMMANDS = "Difficulty Commands: [easy, medium, hard, back]"
+
+    mock.GAME_STATUS_HEADER = "--- Game Status ---"
+    mock.PLAYER_SCORE_FORMAT = "Player 1 ({}) score: {}"
+    mock.PLAYER2_SCORE_FORMAT = "Player 2 ({}) score: {}"
+    mock.CURRENT_PLAYER_FORMAT = "Current Turn: {}"
+    mock.TURN_SCORE_FORMAT = "Turn Score: {}"
+    mock.SCORE_TO_WIN_FORMAT = "Target Score: {}"
+    mock.GAME_COMMANDS = "Game Commands: [roll, hold, status, save, restart, menu, cheat, help]"
+
+    mock.GAME_OVER_HEADER = "--- GAME OVER ---"
+    mock.WINNER_DISPLAY = "Winner: {}"
+
+    mock.GAME_HELP = "Help for playing the game."
+    mock.MAIN_MENU_HELP = "Help for the main menu."
+    mock.GENERAL_HELP = "General help."
+
+    return mock
+
+
+@pytest.fixture
+def mock_game():
+    """Mock the Game Facade object."""
+    mock = MagicMock()
+    # Game setup state properties/methods
+    mock.game_over = False
+    mock._turn_history = []
+    mock._dice_history = []
+
+    # Game methods called by DisplayUtils
+    mock.show_main_menu.return_value = "Main Menu Content"
+    mock.show_settings_menu.return_value = "Settings Menu Content"
+    mock.show_difficulty_menu.return_value = "Difficulty Menu Content"
+
+    # Mock data structure returned by get_game_state
+    mock.get_game_state.return_value = {
+        "player1_name": "Alice",
+        "player1_score": 10,
+        "player2_name": "Bob",
+        "player2_score": 25,
+        "current_player": "Bob",
+        "turn_score": 5,
+        "score_to_win": 100,
+        "winner": "Bob",
+    }
+
+    return mock
+
+
+@pytest.fixture
+def mock_cli(mock_game, mock_constants_display):
+    """Mock the PigGameCLI instance."""
+    mock = MagicMock()
+    mock.game = mock_game
+    mock._current_state = mock_constants_display.STATE_MENU
+    return mock
+
+
+@pytest.fixture
+def display_utils(mock_cli, mock_constants_display):
+    """Initializes DisplayUtils instance with mocked dependencies."""
+    with patch(MOCK_CONSTANTS_PATH, new=mock_constants_display):
+        from src.utils.display_utils import DisplayUtils
+        return DisplayUtils(cli=mock_cli)
+
+
+# ----------------------------------------------------------------------
+# Test: Menu Displays
+# ----------------------------------------------------------------------
+
+@patch('builtins.print')
+def test_show_main_menu_no_active_game(mock_print, display_utils, mock_cli, mock_constants_display, mock_game):
+    """Test main menu display when no game is active/resumable."""
+    mock_cli.game.game_over = True # Ensure game is technically over
+    mock_game._turn_history = []
+
+    display_utils.show_main_menu()
+
+    # Assert that the underlying game method was called
+    mock_game.show_main_menu.assert_called_once()
+
+    # Assert that the content and commands were printed, but not the active note
+    mock_print.assert_any_call("Main Menu Content")
+    mock_print.assert_any_call(mock_constants_display.MAIN_MENU_COMMANDS)
+
+    # Verify the active note was NOT printed
+    assert mock_constants_display.ACTIVE_GAME_NOTE not in [call[0][0] for call in mock_print.call_args_list]
+
+@patch('builtins.print')
+def test_show_main_menu_with_active_game(mock_print, display_utils, mock_cli, mock_constants_display, mock_game):
+    """Test main menu display when an active (resumable) game exists."""
+    mock_cli.game.game_over = False
+    mock_game._turn_history = [1, 2] # Indicates history exists
+    mock_cli._current_state = mock_constants_display.STATE_MENU # Menu state
+
+    display_utils.show_main_menu()
+
+    mock_print.assert_any_call("Main Menu Content")
+    # Assert that the active note IS printed
+    mock_print.assert_any_call(mock_constants_display.ACTIVE_GAME_NOTE)
+    mock_print.assert_any_call(mock_constants_display.MAIN_MENU_COMMANDS)
+
+@patch('builtins.print')
+def test_show_settings_menu(mock_print, display_utils, mock_game, mock_constants_display):
+    """Test settings menu display delegates to game and prints commands."""
+    display_utils.show_settings_menu()
+    mock_game.show_settings_menu.assert_called_once()
+    mock_print.assert_any_call("Settings Menu Content")
+    mock_print.assert_any_call(mock_constants_display.SETTINGS_MENU_COMMANDS)
+
+@patch('builtins.print')
+def test_show_difficulty_menu(mock_print, display_utils, mock_game, mock_constants_display):
+    """Test difficulty menu display delegates to game and prints commands."""
+    display_utils.show_difficulty_menu()
+    mock_game.show_difficulty_menu.assert_called_once()
+    mock_print.assert_any_call("Difficulty Menu Content")
+    mock_print.assert_any_call(mock_constants_display.DIFFICULTY_MENU_COMMANDS)
+
+
+# ----------------------------------------------------------------------
+# Test: Game Status Display
+# ----------------------------------------------------------------------
+
+@patch('builtins.print')
+def test_show_game_status_not_initialized(mock_print, display_utils, mock_cli, mock_constants_display):
+    """Test status display when CLI has no game object."""
+    mock_cli.game = None
+    display_utils.show_game_status()
+    mock_print.assert_called_once_with(mock_constants_display.GAME_NOT_INITIALIZED)
+
+@patch('builtins.print')
+def test_show_game_status_vs_player(mock_print, display_utils, mock_game, mock_constants_display):
+    """Test status display for a two-player game."""
+    # Setup state for two players
+    game_state = {
+        "player1_name": "Alice",
+        "player1_score": 10,
+        "player2_name": "Bob",
+        "player2_score": 25,
+        "current_player": "Bob",
+        "turn_score": 5,
+        "score_to_win": 100,
+        "winner": None,
+    }
+    mock_game.get_game_state.return_value = game_state
+
+    display_utils.show_game_status()
+
+    # Check that all relevant lines were printed
+    mock_print.assert_any_call(mock_constants_display.GAME_STATUS_HEADER)
+    mock_print.assert_any_call(mock_constants_display.PLAYER_SCORE_FORMAT.format("Alice", 10))
+    mock_print.assert_any_call(mock_constants_display.PLAYER2_SCORE_FORMAT.format("Bob", 25))
+    mock_print.assert_any_call(mock_constants_display.CURRENT_PLAYER_FORMAT.format("Bob"))
+    mock_print.assert_any_call(mock_constants_display.TURN_SCORE_FORMAT.format(5))
+    mock_print.assert_any_call(mock_constants_display.SCORE_TO_WIN_FORMAT.format(100))
+    mock_print.assert_any_call(mock_constants_display.GAME_COMMANDS)
+
+@patch('builtins.print')
+def test_show_game_status_vs_computer(mock_print, display_utils, mock_game, mock_constants_display):
+    """Test status display for a human vs. computer game (player2_name is None)."""
+    # Setup state for Human vs AI (player2_name is empty/None)
+    game_state = {
+        "player1_name": "Human",
+        "player1_score": 10,
+        "player2_name": None,  # Key difference: no P2 name means AI is implicit
+        "player2_score": 25,
+        "current_player": "Human",
+        "turn_score": 5,
+        "score_to_win": 100,
+        "winner": None,
+    }
+    mock_game.get_game_state.return_value = game_state
+
+    display_utils.show_game_status()
+
+    # Check Player 1 score (Human)
+    mock_print.assert_any_call(mock_constants_display.PLAYER_SCORE_FORMAT.format("Human", 10))
+
+    # Verify that the PLAYER2_SCORE_FORMAT was NOT called because player2_name is None
+    for call in mock_print.call_args_list:
+        assert mock_constants_display.PLAYER2_SCORE_FORMAT.split('{')[0] not in call[0][0]
+
+
+# ----------------------------------------------------------------------
+# Test: Game Over Display
+# ----------------------------------------------------------------------
+
+@patch('builtins.print')
+def test_show_game_over_success(mock_print, display_utils, mock_game, mock_constants_display):
+    """Test game over display shows winner and commands."""
+    # Setup game state with a winner
+    mock_game.get_game_state.return_value = {"winner": "Alice"}
+
+    display_utils.show_game_over()
+
+    mock_print.assert_any_call(mock_constants_display.GAME_OVER_HEADER)
+    mock_print.assert_any_call(mock_constants_display.WINNER_DISPLAY.format("Alice"))
+    mock_print.assert_any_call(mock_constants_display.GAME_COMMANDS)
+
+@patch('builtins.print')
+def test_show_game_over_not_initialized(mock_print, display_utils, mock_cli, mock_constants_display):
+    """Test game over display fails gracefully if game is not initialized."""
+    mock_cli.game = None
+    display_utils.show_game_over()
+    mock_print.assert_called_once_with(mock_constants_display.GAME_NOT_INITIALIZED)
+
+
+# ----------------------------------------------------------------------
+# Test: Help Display
+# ----------------------------------------------------------------------
+
+@patch('builtins.print')
+def test_show_help_playing(mock_print, display_utils, mock_cli, mock_constants_display):
+    """Test help display when in STATE_PLAYING."""
+    mock_cli._current_state = mock_constants_display.STATE_PLAYING
+    display_utils.show_help()
+    mock_print.assert_called_once_with(mock_constants_display.GAME_HELP)
+
+@patch('builtins.print')
+def test_show_help_menu(mock_print, display_utils, mock_cli, mock_constants_display):
+    """Test help display when in STATE_MENU."""
+    mock_cli._current_state = mock_constants_display.STATE_MENU
+    display_utils.show_help()
+    mock_print.assert_called_once_with(mock_constants_display.MAIN_MENU_HELP)
+
+@patch('builtins.print')
+def test_show_help_general(mock_print, display_utils, mock_cli, mock_constants_display):
+    """Test help display for any other state (defaults to GENERAL_HELP)."""
+    mock_cli._current_state = "some_other_state"
+    display_utils.show_help()
+    mock_print.assert_called_once_with(mock_constants_display.GENERAL_HELP)
