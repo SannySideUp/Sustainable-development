@@ -5,7 +5,7 @@ This file simply imports and runs the PigGameCLI.
 """
 
 import sys
-from src.pig_game_cli import PigGameCLI
+from src.game.pig_game_cli import PigGameCLI
 from src.constants import GAME_INTERRUPTED
 
 

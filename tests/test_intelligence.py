@@ -1,7 +1,7 @@
 
 import pytest
 
-from src.intelligence import DiceDifficulty
+from src.core.intelligence import DiceDifficulty
 
 
 # --- helpers ---------------------------------------------------------------

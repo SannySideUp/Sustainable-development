@@ -10,11 +10,20 @@
   },
   "computer": {
     "name": "Computer",
-    "games_played": 2,
+    "games_played": 3,
     "wins": 1,
-    "losses": 1,
-    "total_score": 138,
+    "losses": 2,
+    "total_score": 181,
     "created": "2025-10-22T16:08:42.085876+00:00",
-    "last_played": "2025-10-22T16:10:36.796108+00:00"
+    "last_played": "2025-10-24T11:29:10.752521+00:00"
+  },
+  "ed7dabc6-7075-4157-8159-27f71edea9d4": {
+    "name": "Timur",
+    "games_played": 1,
+    "wins": 1,
+    "losses": 0,
+    "total_score": 100,
+    "created": "2025-10-24T11:27:02.083079+00:00",
+    "last_played": "2025-10-24T11:29:10.752521+00:00"
   }
 }

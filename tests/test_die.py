@@ -1,5 +1,5 @@
 import pytest
-from src.die import Die
+from src.core.die import Die
 
 
 def test_die_creation_valid():

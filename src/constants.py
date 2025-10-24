@@ -108,6 +108,16 @@ NO_CHANGE_MADE = "Invalid name or no change made."
 STILL_COMPUTER = "Still playing against Computer."
 NO_CHEAT_CODE = "Please provide a cheat code."
 CHEAT_HELP_MESSAGE = "Type 'cheat LIST' to see available codes or 'cheat HELP' for more info."
+CHEAT_CODES= """
+Cheat Code Help:
+- WIN: Instant win (100 points)
+- SCORE10/SCORE25: Add points to current turn
+- BONUS5/BONUS15: Add points to total score  
+- LIST: Show all cheat codes
+- HELP: Show this help
+
+These codes are for testing/development purposes.
+"""
 
 # Success Messages
 GAME_STARTED_COMPUTER = "\nGame started! {} vs Computer"

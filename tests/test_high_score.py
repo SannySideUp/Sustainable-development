@@ -13,10 +13,8 @@ These tests verify that:
 All tests use temporary files to avoid modifying real game data.
 """
 
-import json
-import datetime
 import pytest
-from src.high_score import HighScore
+from src.core.high_score import HighScore
 
 
 # ----------------------------------------------------------------------

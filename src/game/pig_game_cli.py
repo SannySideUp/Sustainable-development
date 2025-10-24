@@ -7,12 +7,12 @@ using Python's cmd module for the terminal-based Pig dice game.
 
 import cmd
 from typing import Optional
-from src.player import Player
-from src.game import Game
+from src.core.player import Player
+from src.game.game import Game
 from src.constants import *
-from src.menu_handlers import MenuHandlers
-from src.game_handlers import GameHandlers
-from src.display_utils import DisplayUtils
+from src.game.menu_handlers import MenuHandlers
+from src.game.game_handlers import GameHandlers
+from src.utils.display_utils import DisplayUtils
 
 
 class PigGameCLI(cmd.Cmd):

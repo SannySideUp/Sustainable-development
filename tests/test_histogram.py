@@ -1,6 +1,6 @@
 import pytest
 from collections import Counter
-from src.histogram import Histogram
+from src.core.histogram import Histogram
 
 @pytest.fixture
 def hist():
