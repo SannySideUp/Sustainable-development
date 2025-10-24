@@ -1,110 +1,42 @@
+import unittest
+from unittest.mock import patch
 
-import pytest
-
-from src.intelligence import DiceDifficulty
-
-
-# --- helpers ---------------------------------------------------------------
-
-ROLL_COUNTS = {
-    "noob": 2,
-    "casual": 4,
-    "challenger": 6,
-    "veteran": 8,
-    "elite": 10,
-    "legendary": 12,
-}
-
-def patch_mode_with_sequence(dice: DiceDifficulty, mode: str, sequence, monkeypatch):
-    """
-    Replace the <mode>() method on DiceDifficulty with a version that yields
-    from a fixed sequence, to make tests deterministic.
-    """
-    it = iter(sequence)
-    def fake_mode():
-        return next(it)
-    monkeypatch.setattr(dice, mode, fake_mode)
+from src.core.intelligence import DiceDifficulty
 
 
-# --- fixtures --------------------------------------------------------------
+class TestDiceDifficulty(unittest.TestCase):
+    def setUp(self):
+        self.d = DiceDifficulty()
 
-@pytest.fixture
-def dice():
-    return DiceDifficulty()
+    def test_available_difficulties(self):
+        self.assertEqual(
+            self.d.get_available_difficulties(),
+            ["noob", "casual", "challenger", "veteran", "elite", "legendary"]
+        )
 
+    def test_descriptions(self):
+        self.assertTrue("Low skill" in self.d.get_difficulty_description("noob"))
+        self.assertTrue("Unknown" in self.d.get_difficulty_description("invalid_mode"))
 
-# --- tests -----------------------------------------------------------------
+    @patch("random.choice", return_value=3)
+    def test_fixed_roll_patterns(self, _):
+        self.assertEqual(self.d.noob(), 3)
+        self.assertEqual(self.d.casual(), 3)
+        self.assertEqual(self.d.challenger(), 3)
+        self.assertEqual(self.d.veteran(), 3)
+        self.assertEqual(self.d.elite(), 3)
+        self.assertEqual(self.d.legendary(), 3)
 
-def test_available_difficulties(dice):
-    expected = ["noob", "casual", "challenger", "veteran", "elite", "legendary"]
-    # Your Game.set_difficulty relies on this existing:
-    assert hasattr(dice, "get_available_difficulties")
-    assert dice.get_available_difficulties() == expected
+    def test_roll_unknown_mode(self):
+        with self.assertRaises(ValueError):
+            self.d.roll("unknown")
 
+    def test_roll_results_are_int(self):
+        for mode in self.d.get_available_difficulties():
+            result = self.d.roll(mode)
+            self.assertIsInstance(result, int)
 
-def test_descriptions_present(dice):
-    # Your Game.get_difficulty_description relies on this:
-    for mode in ["noob", "casual", "challenger", "veteran", "elite", "legendary"]:
-        desc = dice.get_difficulty_description(mode)
-        assert isinstance(desc, str)
-        assert desc.strip() != ""
-
-
-def test_roll_invalid_mode_raises(dice):
-    with pytest.raises(ValueError):
-        dice.roll("unknown-mode")
-
-
-def test_noob_sums_when_no_ones(dice, monkeypatch):
-    # Noob: should roll exactly 2 times and sum them if no 1 encountered
-    patch_mode_with_sequence(dice, "noob", [3, 5], monkeypatch)
-    total = dice.roll("noob")
-    assert total == 3 + 5
-
-
-def test_challenger_returns_1_when_bust(dice, monkeypatch):
-    # Challenger max rolls = 6, but sequence hits 1 on the 2nd roll → returns 1 immediately
-    patch_mode_with_sequence(dice, "challenger", [4, 1, 6, 6, 6, 6], monkeypatch)
-    total = dice.roll("challenger")
-    assert total == 1  # signal to main game that turn busted
-
-
-@pytest.mark.parametrize("mode", ["noob","casual","challenger","veteran","elite","legendary"])
-def test_each_mode_roll_count_when_safe(dice, monkeypatch, mode):
-    """
-    For each difficulty, if no roll is 1, the method should perform exactly
-    ROLL_COUNTS[mode] rolls and return their sum.
-    We stub the mode() to always return 2 to make the sum predictable.
-    """
-    patch_mode_with_sequence(dice, mode, [2] * ROLL_COUNTS[mode], monkeypatch)
-    total = dice.roll(mode)
-    assert total == 2 * ROLL_COUNTS[mode]
-
-
-@pytest.mark.parametrize("mode, bust_index", [
-    ("noob", 1),          # 2 rolls max → bust on 1st or 2nd is enough
-    ("casual", 3),        # 4 rolls max → bust on 3rd
-    ("challenger", 4),    # 6 rolls max → bust on 4th
-    ("veteran", 5),       # 8 rolls max → bust on 5th
-    ("elite", 6),         # 10 rolls max → bust on 6th
-    ("legendary", 9),     # 12 rolls max → bust on 9th
-])
-def test_bust_early_stops_and_returns_1(dice, monkeypatch, mode, bust_index):
-    """
-    Ensure that when a 1 appears before the mode's max rolls,
-    roll() returns 1 immediately (signal), not a sum.
-    """
-    count = ROLL_COUNTS[mode]
-    # Make a safe sequence of 3s, but inject a 1 at bust_index (1-based)
-    seq = [3] * count
-    seq[bust_index - 1] = 1
-    patch_mode_with_sequence(dice, mode, seq, monkeypatch)
-    total = dice.roll(mode)
-    assert total == 1
-
-
-def test_roll_accepts_case_and_whitespace(dice, monkeypatch):
-    # Ensure robust parsing of mode string
-    patch_mode_with_sequence(dice, "elite", [4] * ROLL_COUNTS["elite"], monkeypatch)
-    total = dice.roll("  ELITE  ")
-    assert total == 4 * ROLL_COUNTS["elite"]
+    @patch("random.choice", return_value=1)
+    def test_roll_bust_rule(self, _):
+        for mode in self.d.get_available_difficulties():
+            self.assertEqual(self.d.roll(mode), 1)

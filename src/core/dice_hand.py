@@ -1,5 +1,5 @@
 from typing import List
-from src.die import Die
+from src.core.die import Die
 
 
 class DiceHand:

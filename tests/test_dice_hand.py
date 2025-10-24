@@ -1,6 +1,6 @@
 import pytest
-from src.die import Die
-from src.dice_hand import DiceHand
+from src.core.die import Die
+from src.core.dice_hand import DiceHand
 
 
 def test_dicehand_creation_valid():

@@ -16,20 +16,21 @@ Type 'help' for a list of commands or 'start' to begin playing.
 """
 
 # CLI Prompt
-CLI_PROMPT = 'pig-game> '
+CLI_PROMPT = "pig-game> "
 
 # Default Player Names
 DEFAULT_PLAYER_1_NAME = "Player 1"
 DEFAULT_PLAYER_2_NAME = "Player 2"
 
 # Menu States
+STATE_INIT = "init"
 STATE_MENU = "menu"
 STATE_PLAYING = "playing"
-STATE_GAME_OVER = "game_over"
 STATE_SETTINGS = "settings"
 STATE_DIFFICULTY = "difficulty"
 STATE_STATISTICS = "statistics"
 STATE_HIGHSCORES = "highscores"
+STATE_GAME_OVER = "game_over"
 
 # Menu Headers
 PLAYER_NAME_SETUP_HEADER = "\n=== PLAYER NAME SETUP ==="
@@ -83,7 +84,7 @@ Or use: roll, hold, status, restart, save, load, difficulty
 
 GENERAL_HELP = """
 🐷 PIG GAME COMMANDS:
-start        - Start the game and show main menu
+start        - Start new game menu
 help         - Show this help
 quit         - Exit the game
 """
@@ -107,7 +108,19 @@ ALREADY_AT_MAIN_MENU = "Already at main menu."
 NO_CHANGE_MADE = "Invalid name or no change made."
 STILL_COMPUTER = "Still playing against Computer."
 NO_CHEAT_CODE = "Please provide a cheat code."
-CHEAT_HELP_MESSAGE = "Type 'cheat LIST' to see available codes or 'cheat HELP' for more info."
+CHEAT_HELP_MESSAGE = (
+    "Type 'cheat LIST' to see available codes or 'cheat HELP' for more info."
+)
+CHEAT_CODES = """
+Cheat Code Help:
+- WIN: Instant win (100 points)
+- SCORE10/SCORE25: Add points to current turn
+- BONUS5/BONUS15: Add points to total score  
+- LIST: Show all cheat codes
+- HELP: Show this help
+
+These codes are for testing/development purposes.
+"""
 
 # Success Messages
 GAME_STARTED_COMPUTER = "\nGame started! {} vs Computer"
@@ -200,3 +213,126 @@ RETURNING_TO_SETTINGS = "Returning to settings..."
 RETURNING_TO_MAIN = "Returning to main menu..."
 CANCEL_SETTING_NAME = "Cancel setting name"
 GO_BACK_TO_MAIN = "Go back to main menu if no name entered"
+
+DEFAULT_WINNING_SCORE = 100
+DEFAULT_DIFFICULTY = "casual"
+
+# --- Menu Strings ---
+
+MAIN_MENU = """
+1. Play vs Computer
+2. Play vs Player
+3. View Rules
+4. Settings
+5. Statistics
+6. High Scores
+7. Resume
+8. Exit
+
+Select an option (1-7): """
+
+GAME_MENU_TEMPLATE = """
+Player 1 ({player1_name}): {player1_score} points
+{player2_info}
+
+Current Player: {current_player_name}        
+Turn Score: {turn_score} points              
+Score to Win: {winning_score} points           
+
+Select an option [roll, hold, cheat, state, restart, menu, exit]:"""
+
+SETTINGS_MENU_TEMPLATE = """
+=== SETTINGS ===
+
+1. Difficulty
+2. Save Game
+3. Load Game
+4. Back to Main Menu                                  
+    
+Select an option (1-4):"""
+
+# --- Difficulty Menu ---
+
+DIFFICULTY_CURRENT_MARKER = " ← CURRENT"
+
+DIFFICULTY_MENU_TEMPLATE = """
+=== DIFFICULTY ===
+
+{options_text}
+
+{max_choice}. Back to Settings
+
+Select an option (1-{max_choice}): """
+
+# --- Load Game Menu ---
+
+LOAD_GAME_NONE = """
+=== LOAD GAME ===
+
+No save files found.
+
+Press any key to go back to settings..."""
+
+LOAD_GAME_AVAILABLE = """
+=== LOAD GAME ===
+
+Available saves:
+{save_options}
+{max_choice}. Back to Settings
+
+Select an option (1-{max_choice}): """
+
+# --- Player Name Setup ---
+
+SET_P1_NAME_MENU = """
+=== SET PLAYER 1 NAME ===
+
+Current Player 1 Name: {current_name}
+Enter new name for Player 1 (or press Enter to cancel): """
+
+SET_P2_NAME_MENU = """
+=== SET PLAYER 2 NAME ===
+
+Current Player 2: {current_name}
+Enter new name for Player 2 (or press Enter to cancel): """
+
+P1_NAME_SETUP = """=== ENTER PLAYER 1 NAME ==="""
+
+P2_NAME_SETUP = """=== ENTER PLAYER 2 NAME ==="""
+
+PLAYER_SETUP_MENU = """
+=== PLAYER SETUP ===
+
+Current Player 2: {current_name}
+Enter Player 2's name (or press Enter for '{current_name}'): """
+
+# --- Statistics Menus ---
+
+STATISTICS_MENU = """
+=== STATISTICS ===
+
+1. View Game History
+2. View Dice Roll History
+3. View Player Statistics
+4. Back to Main Menu
+
+Select an option (1-4): """
+
+HIGHSCORES_MENU = """
+=== HIGH SCORES ===
+
+1. View Top Scores
+2. View Player Best Scores
+3. Clear High Scores
+4. Back to Main Menu
+
+Select an option (1-4): """
+
+GAME_RULES = (
+    "\n📜 Rules:\n"
+    "1. Each turn, a player repeatedly rolls a single six-sided die.\n"
+    "2. If the player rolls a 1, they score nothing and their turn ends (Bust).\n"
+    "3. If the player rolls a 2-6, it is added to their turn total.\n"
+    "4. The player can choose to 'hold' at any time. The turn total is added to their final score, and their turn ends.\n"
+    "5. The first player to reach the winning score (typically 100) wins the game.\n"
+)
