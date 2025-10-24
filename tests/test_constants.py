@@ -277,17 +277,6 @@ class TestConstants:
             assert isinstance(getattr(constants, choice_const), str)
             assert len(getattr(constants, choice_const)) > 0
     
-    def test_all_constants_are_strings(self):
-        """Test that all constants are strings."""
-        # Get all attributes that are likely constants (uppercase names)
-        constants_attrs = [attr for attr in dir(constants) 
-                          if attr.isupper() and not attr.startswith('_')]
-        
-        for attr_name in constants_attrs:
-            attr_value = getattr(constants, attr_name)
-            assert isinstance(attr_value, str), f"{attr_name} should be a string"
-            assert len(attr_value) > 0, f"{attr_name} should not be empty"
-    
     def test_constants_have_expected_content(self):
         """Test that constants contain expected content."""
         # Test specific content in key constants

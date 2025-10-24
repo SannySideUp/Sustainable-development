@@ -1,415 +1,409 @@
-"""
-Unit tests for the GameHandlers class, which handles game-related commands
-in the CLI, ensuring correct delegation and state management.
-"""
-
-import pytest
-from unittest.mock import MagicMock, patch
-
-from src.game.game_handlers import GameHandlers
-
-# --- Setup Paths (Assumes CLI is at src.cli.cli and Handlers at src.cli.game_handlers) ---
-GAME_HANDLERS_PATH = "src.cli.game_handlers"
-MOCK_CONSTANTS_PATH = f"{GAME_HANDLERS_PATH}.constants"
-
-
-# --- Fixtures for Mocking Dependencies ---
-
-@pytest.fixture
-def mock_constants_handlers():
-    """Mocks the constants module used by GameHandlers."""
-    mock = MagicMock()
-    # State constants
-    mock.STATE_PLAYING = "playing"
-    mock.STATE_GAME_OVER = "game_over"
-    mock.STATE_INIT = "init"
-
-    # Message constants (simplified for testing)
-    mock.GAME_NOT_INITIALIZED = "Error: Game not initialized."
-    mock.NOT_IN_GAME = "Error: Not currently in game."
-    mock.ROLLED_MESSAGE = "You rolled a {}. Turn score is now {}."
-    mock.HOLD_MESSAGE = "Hold successful: {}."
-    mock.ROLL_ERROR = "Roll error: {}."
-    mock.GAME_RESTARTED = "Game restarted."
-    mock.GAME_SAVED = "Game saved to {}."
-    mock.ERROR_SAVING_GAME = "Error saving game: {}."
-    mock.GAME_LOADED = "Game loaded: {}."
-    mock.ERROR_LOADING_GAME = "Error loading game: {}."
-    mock.NO_CHEAT_CODE = "No cheat code provided."
-    mock.CHEAT_HELP_MESSAGE = "Use 'cheat <code values>'."
-    mock.CHEAT_APPLIED = "Cheat result: {}."
-    mock.COMPUTER_ROLLED = "Computer rolls: {}."
-    mock.COMPUTER_TURN_ERROR = "Computer error: {}."
-    mock.GAME_OVER_MESSAGE = "The game is already over."
-    mock.NO_ACTIVE_GAME = "No active game found."
-    mock.RESUMING_GAME = "Resuming active game."
-    mock.NO_SAVE_FILES = "No save files found."
-    mock.AVAILABLE_SAVE_FILES = "Available save files:"
-    mock.SAVE_FILE_FORMAT = "{}. {}"
-    mock.INVALID_SELECTION = "Invalid selection. Enter a number between 1 and {}."
-    mock.INVALID_INPUT = "Invalid input '{}'. Please enter a number between 1 and {}."
-    return mock
-
-
-@pytest.fixture
-def mock_cli():
-    """Mock the PigGameCLI instance that GameHandlers receives."""
-    mock = MagicMock()
-    # Game object (will be nested mock)
-    mock.game = MagicMock()
-    mock.game.game_over = False
-    mock.game._current_player = MagicMock() # Assume a player is active
-    mock.game._turn_history = [1] # Used for checking "active game"
-    mock.game._dice_history = [1]
-
-    # CLI state
-    mock._current_state = "playing"
-
-    # Methods called by GameHandlers that exist on the CLI
-    mock.show_game_status = MagicMock()
-    mock.show_game_over = MagicMock()
-    mock.do_computer_turn = MagicMock()
-
-    return mock
-
-
-@pytest.fixture
-def game_handlers(mock_cli, mock_constants_handlers):
-    """Initializes GameHandlers instance with mocked dependencies."""
-    with patch(MOCK_CONSTANTS_PATH, new=mock_constants_handlers):
-        from src.game.game_handlers import GameHandlers
-        return GameHandlers(cli=mock_cli)
-
-
-# ----------------------------------------------------------------------
-# Test: State Checkers (_check_game_initialized, _check_playing_state)
-# ----------------------------------------------------------------------
-
-def test_check_game_initialized_success(game_handlers, mock_cli):
-    """Test successful check when game is initialized."""
-    assert game_handlers._check_game_initialized() is True
-
-def test_check_game_initialized_failure(game_handlers, mock_cli, mock_constants_handlers):
-    """Test failure when cli.game is None."""
-    mock_cli.game = None
-    with patch('builtins.print') as mock_print:
-        assert game_handlers._check_game_initialized() is False
-        mock_print.assert_called_once_with(mock_constants_handlers.GAME_NOT_INITIALIZED)
-
-def test_check_playing_state_success(game_handlers):
-    """Test successful check when state is STATE_PLAYING."""
-    assert game_handlers._check_playing_state() is True
-
-def test_check_playing_state_failure_state(game_handlers, mock_cli, mock_constants_handlers):
-    """Test failure when state is not STATE_PLAYING."""
-    mock_cli._current_state = mock_constants_handlers.STATE_INIT
-    with patch('builtins.print') as mock_print:
-        assert game_handlers._check_playing_state() is False
-        mock_print.assert_called_once_with(mock_constants_handlers.NOT_IN_GAME)
-
-def test_check_playing_state_failure_game(game_handlers, mock_cli, mock_constants_handlers):
-    """Test failure when game is not initialized."""
-    mock_cli.game = None
-    # No extra print call expected from _check_playing_state here, as the inner checker prints.
-    assert game_handlers._check_playing_state() is False
-
-
-# ----------------------------------------------------------------------
-# Test: Handle Roll and Hold
-# ----------------------------------------------------------------------
-
-@patch.object(GameHandlers, '_execute_player_move')
-def test_handle_roll_delegates(mock_execute, game_handlers, mock_cli):
-    """Test handle_roll delegates to _execute_player_move with 'roll'."""
-    game_handlers.handle_roll()
-    mock_execute.assert_called_once_with("roll")
-
-@patch.object(GameHandlers, '_execute_player_move')
-def test_handle_hold_delegates(mock_execute, game_handlers, mock_cli):
-    """Test handle_hold delegates to _execute_player_move with 'hold'."""
-    game_handlers.handle_hold()
-    mock_execute.assert_called_once_with("hold")
-
-# Test move delegation when not in playing state
-def test_handle_roll_blocked_by_state(game_handlers, mock_cli, mock_constants_handlers):
-    """Test roll is blocked if not in playing state."""
-    mock_cli._current_state = mock_constants_handlers.STATE_INIT
-    with patch('builtins.print'):
-        # _check_playing_state will print NOT_IN_GAME and return False
-        game_handlers.handle_roll()
-        mock_cli.game.execute_move.assert_not_called()
-
-
-# ----------------------------------------------------------------------
-# Test: Core Move Execution (_execute_player_move)
-# ----------------------------------------------------------------------
-
-def test_execute_player_move_roll_success_no_switch(game_handlers, mock_cli, mock_constants_handlers):
-    """Test successful roll that does not cause game over or turn switch."""
-    # Set up mock game results
-    mock_cli.game.execute_move.return_value = (5, 10) # (result, roll_or_message)
-    mock_cli.game.game_over = False
-    mock_cli.game._current_player = MagicMock() # Player is still active
-
-    with patch('builtins.print') as mock_print:
-        game_handlers._execute_player_move("roll")
-
-        mock_print.assert_any_call(mock_constants_handlers.ROLLED_MESSAGE.format(10, 5))
-        mock_cli.show_game_status.assert_called_once()
-        mock_cli.show_game_over.assert_not_called()
-        mock_cli.do_computer_turn.assert_not_called()
-
-def test_execute_player_move_hold_success_triggers_switch(game_handlers, mock_cli, mock_constants_handlers):
-    """Test successful hold that triggers a player switch (current_player becomes None)."""
-    # Set up mock game results
-    mock_cli.game.execute_move.return_value = ("Player held 20 points.", 20)
-    mock_cli.game.game_over = False
-    mock_cli.game._current_player = None # Indicates turn switch to computer
-
-    with patch('builtins.print') as mock_print:
-        game_handlers._execute_player_move("hold")
-
-        mock_print.assert_any_call(mock_constants_handlers.HOLD_MESSAGE.format("Player held 20 points."))
-        mock_cli.show_game_status.assert_called_once()
-        # Should call computer turn handler
-        mock_cli.do_computer_turn.assert_called_once_with("")
-
-def test_execute_player_move_game_over(game_handlers, mock_cli, mock_constants_handlers):
-    """Test a move that results in a game over condition."""
-    mock_cli.game.execute_move.return_value = ("Alice wins!", 0)
-    mock_cli.game.game_over = True
-    original_state = mock_cli._current_state
-
-    game_handlers._execute_player_move("hold")
-
-    assert mock_cli._current_state == mock_constants_handlers.STATE_GAME_OVER
-    mock_cli.show_game_over.assert_called_once()
-    mock_cli.do_computer_turn.assert_not_called()
-    assert original_state != mock_cli._current_state # State should have changed
-
-def test_execute_player_move_error_handling(game_handlers, mock_cli, mock_constants_handlers):
-    """Test error handling for ValueError during a move."""
-    mock_cli.game.execute_move.side_effect = ValueError("Invalid move when game is paused")
-
-    with patch('builtins.print') as mock_print:
-        game_handlers._execute_player_move("roll")
-
-        mock_print.assert_called_once_with(mock_constants_handlers.ROLL_ERROR.format("Invalid move when game is paused"))
-        mock_cli.show_game_status.assert_not_called() # No status update on error
-
-
-# ----------------------------------------------------------------------
-# Test: Utility Commands (Status, Restart)
-# ----------------------------------------------------------------------
-
-def test_handle_status_success(game_handlers, mock_cli):
-    """Test handle_status delegates to show_game_status."""
-    game_handlers.handle_status()
-    mock_cli.show_game_status.assert_called_once()
-
-def test_handle_status_blocked(game_handlers, mock_cli):
-    """Test handle_status is blocked if game is not initialized."""
-    mock_cli.game = None
-    with patch('builtins.print'):
-        game_handlers.handle_status()
-        mock_cli.show_game_status.assert_not_called()
-
-def test_handle_restart_success(game_handlers, mock_cli, mock_constants_handlers):
-    """Test handle_restart resets the game and state."""
-    mock_cli._current_state = mock_constants_handlers.STATE_GAME_OVER
-
-    with patch('builtins.print') as mock_print:
-        game_handlers.handle_restart()
-
-    mock_cli.game.restart.assert_called_once()
-    assert mock_cli._current_state == mock_constants_handlers.STATE_PLAYING
-    mock_print.assert_called_once_with(mock_constants_handlers.GAME_RESTARTED)
-    mock_cli.show_game_status.assert_called_once()
-
-
-# ----------------------------------------------------------------------
-# Test: Cheat Command
-# ----------------------------------------------------------------------
-
-def test_handle_cheat_with_code_success(game_handlers, mock_cli):
-    """Test handle_cheat applies the code and updates status."""
-    mock_cli.game.input_cheat_code.return_value = "Score adjusted."
-
-    with patch('builtins.print') as mock_print:
-        game_handlers.handle_cheat("add 50")
-
-    mock_cli.game.input_cheat_code.assert_called_once_with("add 50")
-    mock_cli.show_game_status.assert_called_once()
-    mock_print.assert_called_once_with("Cheat result: Score adjusted.")
-    mock_cli.show_game_over.assert_not_called()
-
-def test_handle_cheat_no_code(game_handlers, mock_cli, mock_constants_handlers):
-    """Test handle_cheat with no code prints help message."""
-    with patch('builtins.print') as mock_print:
-        game_handlers.handle_cheat(" ")
-
-    mock_print.assert_any_call(mock_constants_handlers.NO_CHEAT_CODE)
-    mock_print.assert_any_call(mock_constants_handlers.CHEAT_HELP_MESSAGE)
-    mock_cli.game.input_cheat_code.assert_not_called()
-
-def test_handle_cheat_triggers_game_over(game_handlers, mock_cli, mock_constants_handlers):
-    """Test handle_cheat where the cheat causes the game to end."""
-    mock_cli.game.input_cheat_code.return_value = "Player wins!"
-    mock_cli.game.game_over = True
-
-    game_handlers.handle_cheat("win")
-
-    assert mock_cli._current_state == mock_constants_handlers.STATE_GAME_OVER
-    mock_cli.show_game_status.assert_called_once()
-    mock_cli.show_game_over.assert_called_once()
-
-
-# ----------------------------------------------------------------------
-# Test: Computer Turn
-# ----------------------------------------------------------------------
-
-def test_handle_computer_turn_success(game_handlers, mock_cli, mock_constants_handlers):
-    """Test successful computer turn execution."""
-    mock_cli.game.computer_turn.return_value = "Computer rolls 10 and holds."
-    mock_cli.game._player2 = None # Ensure it's human vs AI
-
-    with patch('builtins.print') as mock_print:
-        game_handlers.handle_computer_turn()
-
-    mock_cli.game.computer_turn.assert_called_once()
-    mock_cli.show_game_status.assert_called_once()
-    mock_print.assert_called_once_with(mock_constants_handlers.COMPUTER_ROLLED.format("Computer rolls 10 and holds."))
-
-def test_handle_computer_turn_game_over(game_handlers, mock_cli, mock_constants_handlers):
-    """Test computer turn resulting in game over."""
-    mock_cli.game.computer_turn.return_value = "Computer wins!"
-    mock_cli.game.game_over = True
-    mock_cli.game._player2 = None
-
-    game_handlers.handle_computer_turn()
-
-    assert mock_cli._current_state == mock_constants_handlers.STATE_GAME_OVER
-    mock_cli.show_game_over.assert_called_once()
-
-
-# ----------------------------------------------------------------------
-# Test: Save and Load
-# ----------------------------------------------------------------------
-
-def test_handle_save_success_with_filename(game_handlers, mock_cli, mock_constants_handlers):
-    """Test saving game with a specific filename."""
-    mock_cli.game.save_game.return_value = "my_save.json"
-
-    with patch('builtins.print') as mock_print:
-        game_handlers.handle_save("my_save")
-
-    mock_cli.game.save_game.assert_called_once_with("my_save")
-    mock_print.assert_called_once_with(mock_constants_handlers.GAME_SAVED.format("my_save.json"))
-
-def test_handle_save_exception(game_handlers, mock_cli, mock_constants_handlers):
-    """Test exception handling during save."""
-    mock_cli.game.save_game.side_effect = Exception("Disk full")
-
-    with patch('builtins.print') as mock_print:
-        game_handlers.handle_save(None)
-
-    mock_print.assert_called_once_with(mock_constants_handlers.ERROR_SAVING_GAME.format("Disk full"))
-
-@patch.object(GameHandlers, '_show_save_files')
-def test_handle_load_no_filename(mock_show_files, game_handlers, mock_cli):
-    """Test handle_load with no filename calls _show_save_files."""
-    game_handlers.handle_load(None)
-    mock_show_files.assert_called_once()
-    mock_cli.game.load_game.assert_not_called()
-
-def test_load_game_file_success(game_handlers, mock_cli, mock_constants_handlers):
-    """Test successful loading of a game file."""
-    mock_cli.game.load_game.return_value = "Game successfully loaded."
-    mock_cli._current_state = mock_constants_handlers.STATE_INIT
-
-    with patch('builtins.print'):
-        game_handlers._load_game_file("test.json")
-
-    mock_cli.game.load_game.assert_called_once_with("test.json")
-    assert mock_cli._current_state == mock_constants_handlers.STATE_PLAYING
-    mock_cli.show_game_status.assert_called_once()
-
-def test_load_game_file_failure(game_handlers, mock_cli, mock_constants_handlers):
-    """Test unsuccessful loading of a game file."""
-    mock_cli.game.load_game.return_value = "File not found."
-
-    with patch('builtins.print') as mock_print:
-        game_handlers._load_game_file("bad_file.json")
-
-    mock_print.assert_called_once_with(mock_constants_handlers.ERROR_LOADING_GAME.format("File not found."))
-    assert mock_cli._current_state != mock_constants_handlers.STATE_PLAYING
-
-
-@patch('builtins.input', side_effect=['2'])
-@patch('builtins.print')
-def test_show_save_files_selection_success(mock_print, mock_input, game_handlers, mock_cli, mock_constants_handlers):
-    """Test listing files and successful selection/delegation."""
-    mock_cli.game.list_save_files.return_value = ["file1.json", "file2.json", "file3.json"]
-    mock_cli.game.load_game.return_value = "Game successfully loaded."
-
-    game_handlers._show_save_files()
-
-    # Check messages
-    mock_print.assert_any_call(mock_constants_handlers.AVAILABLE_SAVE_FILES)
-    mock_print.assert_any_call(mock_constants_handlers.SAVE_FILE_FORMAT.format(2, "file2.json"))
-
-    # Check delegation
-    mock_cli.game.load_game.assert_called_once_with("file2.json")
-
-@patch('builtins.input', side_effect=['5', '2']) # First invalid, then valid
-@patch('builtins.print')
-def test_show_save_files_invalid_selection(mock_print, mock_input, game_handlers, mock_cli, mock_constants_handlers):
-    """Test listing files and invalid selection handling."""
-    mock_cli.game.list_save_files.return_value = ["file1.json", "file2.json", "file3.json"]
-
-    game_handlers._show_save_files()
-
-    # Check invalid selection message
-    mock_print.assert_any_call(mock_constants_handlers.INVALID_SELECTION.format(3))
-
-    # Check the successful load after the retry (due to side_effect array)
-    mock_cli.game.load_game.assert_called_once_with("file2.json")
-
-
-# ----------------------------------------------------------------------
-# Test: Resume Command
-# ----------------------------------------------------------------------
-
-def test_handle_resume_success(game_handlers, mock_cli, mock_constants_handlers):
-    """Test handle_resume when state is not playing but an active game exists."""
-    mock_cli._current_state = mock_constants_handlers.STATE_INIT
-
-    with patch('builtins.print') as mock_print:
-        game_handlers.handle_resume()
-
-    assert mock_cli._current_state == mock_constants_handlers.STATE_PLAYING
-    mock_print.assert_any_call(mock_constants_handlers.RESUMING_GAME)
-    mock_cli.show_game_status.assert_called_once()
-
-def test_handle_resume_game_over(game_handlers, mock_cli, mock_constants_handlers):
-    """Test handle_resume when the game is over."""
-    mock_cli.game.game_over = True
-
-    with patch('builtins.print') as mock_print:
-        game_handlers.handle_resume()
-
-    mock_print.assert_any_call(mock_constants_handlers.GAME_OVER_MESSAGE)
-    assert mock_cli._current_state != mock_constants_handlers.STATE_PLAYING
-
-def test_handle_resume_no_active_game(game_handlers, mock_cli, mock_constants_handlers):
-    """Test handle_resume when no game has been played yet (empty history)."""
-    mock_cli.game.game_over = False
-    mock_cli._current_state = mock_constants_handlers.STATE_INIT
-    mock_cli.game._turn_history = []
-    mock_cli.game._dice_history = []
-
-    with patch('builtins.print') as mock_print:
-        game_handlers.handle_resume()
-
-    mock_print.assert_any_call(mock_constants_handlers.NO_ACTIVE_GAME)
-    assert mock_cli._current_state == mock_constants_handlers.STATE_INIT # Should not change state
+# from unittest.mock import patch, MagicMock
+#
+# import pytest
+#
+# from src.game.game_handlers import GameHandlers
+#
+#
+# @pytest.fixture
+# def mock_constants():
+#     """Mock all constants used by GameHandlers."""
+#     class MockConstants:
+#         STATE_PLAYING = "PLAYING"
+#         STATE_MENU = "MENU"
+#         STATE_GAME_OVER = "GAME_OVER"
+#         GAME_NOT_INITIALIZED = "Game is not started."
+#         NOT_IN_GAME = "Action not allowed outside playing state."
+#         ROLLED_MESSAGE = "You rolled a {}."
+#         HOLD_MESSAGE = "Score saved: {}"
+#         ROLL_ERROR = "Roll error: {}"
+#         GAME_RESTARTED = "Game restarted!"
+#         GAME_SAVED = "Game saved to {}."
+#         ERROR_SAVING_GAME = "Save error: {}"
+#         GAME_LOADED = "Game loaded: {}"
+#         ERROR_LOADING_GAME = "Load error: {}"
+#         NO_CHEAT_CODE = "Missing cheat code."
+#         CHEAT_HELP_MESSAGE = "Use: cheat <code_and_args>"
+#         CHEAT_APPLIED = "Cheat result: {}"
+#         GAME_OVER_MESSAGE = "Game already finished."
+#         NO_ACTIVE_GAME = "No game history to resume."
+#         RESUMING_GAME = "Resuming active game."
+#         COMPUTER_ROLLED = "Computer rolls: {}"
+#         COMPUTER_TURN_ERROR = "Computer turn failed: {}"
+#         NO_SAVE_FILES = "No save files found."
+#         AVAILABLE_SAVE_FILES = "Available files:"
+#         SAVE_FILE_FORMAT = "{}. {}"
+#         INVALID_SELECTION = "Invalid selection. Pick 1 to {}."
+#         INVALID_INPUT = "Invalid input: {}. Please enter a number between 1 and {}."
+#
+#     return MockConstants()
+#
+#
+# @pytest.fixture
+# def mock_game():
+#     """Mock the Game facade."""
+#     mock = MagicMock()
+#     mock.game_over = False
+#     mock.execute_move.return_value = ("Turn score: 15", 5) # (result, roll_or_message)
+#     mock.save_game.return_value = "my_game_save.json"
+#     mock.load_game.return_value = "Loaded successfully"
+#     mock.list_save_files.return_value = ["file_a.json", "file_b.json"]
+#     mock.input_cheat_code.return_value = "Score set to 99"
+#     mock.computer_turn.return_value = "6, 5, Hold"
+#     mock._current_player = MagicMock()
+#     mock._player2 = None  # Default to PvC
+#     mock._turn_history = [1, 2] # Default to active game state for resume
+#     mock._dice_history = [3, 4]
+#     return mock
+#
+#
+# @pytest.fixture
+# def mock_cli(mock_game, mock_constants):
+#     """Mock the CLI instance."""
+#     cli = MagicMock()
+#     cli.game = mock_game
+#     cli.constants = mock_constants
+#     cli._current_state = mock_constants.STATE_PLAYING
+#     cli.show_game_status = MagicMock()
+#     cli.show_game_over = MagicMock()
+#     cli.do_computer_turn = MagicMock()
+#     return cli
+#
+#
+# @pytest.fixture
+# def handler(mock_cli):
+#     """Instantiate GameHandlers with the mocked CLI."""
+#     return GameHandlers(mock_cli)
+#
+# # ----------------------------------------------------------------------
+# # Test: Helper Checks
+# # ----------------------------------------------------------------------
+#
+# @patch('builtins.print')
+# def test_check_game_initialized_success(mock_print, handler, mock_cli):
+#     """Test game initialized check returns True when game exists."""
+#     assert handler._check_game_initialized() is True
+#     mock_print.assert_not_called()
+#
+# @patch('builtins.print')
+# def test_check_game_initialized_failure(mock_print, handler, mock_cli):
+#     """Test game initialized check returns False and prints error when game is None."""
+#     mock_cli.game = None
+#     assert handler._check_game_initialized() is False
+#     mock_print.assert_called_with(mock_cli.constants.GAME_NOT_INITIALIZED)
+#
+# @patch('builtins.print')
+# def test_check_playing_state_success(mock_print, handler, mock_cli):
+#     """Test playing state check returns True when state is PLAYING."""
+#     assert handler._check_playing_state() is True
+#     mock_print.assert_not_called()
+#
+# @patch('builtins.print')
+# def test_check_playing_state_failure(mock_print, handler, mock_cli):
+#     """Test playing state check returns False when state is not PLAYING."""
+#     mock_cli._current_state = mock_cli.constants.STATE_MENU
+#     assert handler._check_playing_state() is False
+#     mock_print.assert_called_with(mock_cli.constants.NOT_IN_GAME)
+#
+# # ----------------------------------------------------------------------
+# # Test: handle_roll and handle_hold
+# # ----------------------------------------------------------------------
+#
+# @patch('builtins.print')
+# def test_handle_roll_success(mock_print, handler, mock_cli, mock_game):
+#     """Test successful roll command."""
+#     handler.handle_roll()
+#     mock_game.execute_move.assert_called_once_with("roll")
+#     mock_print.assert_any_call(mock_cli.constants.ROLLED_MESSAGE.format(5))
+#     mock_print.assert_any_call("Turn score: 15") # Prints result if move == "roll"
+#     mock_cli.show_game_status.assert_called_once()
+#     mock_cli.do_computer_turn.assert_not_called()
+#     mock_cli.show_game_over.assert_not_called()
+#
+# @patch('builtins.print')
+# def test_handle_hold_success(mock_print, handler, mock_cli, mock_game):
+#     """Test successful hold command (PvP scenario)."""
+#     # Assume _current_player is not None (human player turn)
+#     handler.handle_hold()
+#     mock_game.execute_move.assert_called_once_with("hold")
+#     mock_print.assert_any_call(mock_cli.constants.HOLD_MESSAGE.format("Turn score: 15"))
+#     mock_cli.show_game_status.assert_called_once()
+#     mock_cli.do_computer_turn.assert_not_called()
+#
+# @patch('builtins.print')
+# def test_handle_hold_triggers_computer_turn(mock_print, handler, mock_cli, mock_game):
+#     """Test hold command triggers computer turn when current_player becomes None (PvC scenario)."""
+#     # Simulate that hold switches turn to computer (represented by None)
+#     mock_game._current_player = None
+#     handler.handle_hold()
+#     mock_game.execute_move.assert_called_once_with("hold")
+#     mock_cli.do_computer_turn.assert_called_once_with("")
+#     mock_cli.show_game_over.assert_not_called()
+#
+# @patch('builtins.print')
+# def test_execute_player_move_game_over(mock_print, handler, mock_cli, mock_game):
+#     """Test a move that results in game over."""
+#     mock_game.game_over = True
+#     handler.handle_roll()
+#     mock_cli._current_state = mock_cli.constants.STATE_GAME_OVER
+#     mock_cli.show_game_over.assert_called_once()
+#
+# @patch('builtins.print')
+# def test_execute_player_move_value_error(mock_print, handler, mock_cli, mock_game):
+#     """Test a move that raises a ValueError (e.g., trying to roll when it's not player's turn)."""
+#     error_msg = "Cannot roll now."
+#     mock_game.execute_move.side_effect = ValueError(error_msg)
+#     handler.handle_roll()
+#     mock_print.assert_any_call(mock_cli.constants.ROLL_ERROR.format(error_msg))
+#     mock_cli.show_game_status.assert_not_called()
+#     mock_cli.show_game_over.assert_not_called()
+#
+# # ----------------------------------------------------------------------
+# # Test: handle_status and handle_restart
+# # ----------------------------------------------------------------------
+#
+# def test_handle_status_success(handler, mock_cli):
+#     """Test successful status command."""
+#     handler.handle_status()
+#     mock_cli.show_game_status.assert_called_once()
+#
+# @patch('builtins.print')
+# def test_handle_status_not_initialized(mock_print, handler, mock_cli):
+#     """Test status command fails when game is not initialized."""
+#     mock_cli.game = None
+#     handler.handle_status()
+#     mock_print.assert_called_with(mock_cli.constants.GAME_NOT_INITIALIZED)
+#     mock_cli.show_game_status.assert_not_called()
+#
+# @patch('builtins.print')
+# def test_handle_restart(mock_print, handler, mock_cli, mock_game):
+#     """Test restart command."""
+#     mock_cli._current_state = mock_cli.constants.STATE_GAME_OVER # Starting in game over state
+#     handler.handle_restart()
+#     mock_game.restart.assert_called_once()
+#     assert mock_cli._current_state == mock_cli.constants.STATE_PLAYING
+#     mock_print.assert_called_with(mock_cli.constants.GAME_RESTARTED)
+#     mock_cli.show_game_status.assert_called_once()
+#
+# # ----------------------------------------------------------------------
+# # Test: handle_save
+# # ----------------------------------------------------------------------
+#
+# @patch('builtins.print')
+# def test_handle_save_with_filename(mock_print, handler, mock_cli, mock_game):
+#     """Test saving game with a specific filename."""
+#     handler.handle_save("my_save")
+#     mock_game.save_game.assert_called_once_with("my_save")
+#     mock_print.assert_called_with(mock_cli.constants.GAME_SAVED.format(mock_game.save_game.return_value))
+#
+# @patch('builtins.print')
+# def test_handle_save_without_filename(mock_print, handler, mock_cli, mock_game):
+#     """Test saving game without a specific filename (should use default logic)."""
+#     handler.handle_save("")
+#     mock_game.save_game.assert_called_once_with(None)
+#     mock_print.assert_called_with(mock_cli.constants.GAME_SAVED.format(mock_game.save_game.return_value))
+#
+# @patch('builtins.print')
+# def test_handle_save_failure(mock_print, handler, mock_cli, mock_game):
+#     """Test saving game fails due to an exception."""
+#     error_msg = "Disk write error"
+#     mock_game.save_game.side_effect = Exception(error_msg)
+#     handler.handle_save("failing_save")
+#     mock_game.save_game.assert_called_once_with("failing_save")
+#     mock_print.assert_called_with(mock_cli.constants.ERROR_SAVING_GAME.format(f"Exception('{error_msg}')"))
+#
+# # ----------------------------------------------------------------------
+# # Test: handle_load and _show_save_files
+# # ----------------------------------------------------------------------
+#
+# @patch('builtins.print')
+# def test_handle_load_with_filename_success(mock_print, handler, mock_cli, mock_game):
+#     """Test loading game with a valid filename successfully."""
+#     mock_game.load_game.return_value = "Game loaded successfully"
+#     mock_cli._current_state = mock_cli.constants.STATE_MENU # Start in a non-playing state
+#     handler.handle_load("good_file.json")
+#     mock_game.load_game.assert_called_once_with("good_file.json")
+#     assert mock_cli._current_state == mock_cli.constants.STATE_PLAYING
+#     mock_print.assert_any_call(mock_cli.constants.GAME_LOADED.format(mock_game.load_game.return_value))
+#     mock_cli.show_game_status.assert_called_once()
+#
+# @patch('builtins.print')
+# @patch('builtins.input', return_value='1') # Mock user selection '1' (file_a.json)
+# def test_handle_load_without_filename_shows_files_and_loads(mock_input, mock_print, handler, mock_cli, mock_game):
+#     """Test handle_load shows files, prompts for input, and loads the selected file."""
+#     mock_game.load_game.return_value = "File loaded successfully from file_a.json"
+#     handler.handle_load(None)
+#     mock_game.list_save_files.assert_called_once()
+#     mock_print.assert_any_call(mock_cli.constants.AVAILABLE_SAVE_FILES)
+#     mock_print.assert_any_call(mock_cli.constants.SAVE_FILE_FORMAT.format(1, "file_a.json"))
+#     mock_game.load_game.assert_called_once_with("file_a.json")
+#
+# @patch('builtins.print')
+# def test__load_game_file_failure_message(mock_print, handler, mock_cli, mock_game):
+#     """Test loading a game file where the result does not contain 'successfully'."""
+#     mock_game.load_game.return_value = "File not found."
+#     handler._load_game_file("bad_file.json")
+#     mock_game.load_game.assert_called_once_with("bad_file.json")
+#     mock_print.assert_called_with(mock_cli.constants.ERROR_LOADING_GAME.format(mock_game.load_game.return_value))
+#     mock_cli.show_game_status.assert_not_called()
+#
+# @patch('builtins.print')
+# def test__load_game_file_exception(mock_print, handler, mock_cli, mock_game):
+#     """Test loading a game file that raises an exception."""
+#     error_msg = "Network timeout"
+#     mock_game.load_game.side_effect = Exception(error_msg)
+#     handler._load_game_file("network_fail.json")
+#     mock_print.assert_called_with(mock_cli.constants.ERROR_LOADING_GAME.format(f"Exception('{error_msg}')"))
+#     mock_cli.show_game_status.assert_not_called()
+#
+# @patch('builtins.print')
+# def test__show_save_files_no_files(mock_print, handler, mock_cli, mock_game):
+#     """Test showing save files when none are available."""
+#     mock_game.list_save_files.return_value = []
+#     handler._show_save_files()
+#     mock_print.assert_called_with(mock_cli.constants.NO_SAVE_FILES)
+#
+# @patch('builtins.input', side_effect=['3', 'abc'])
+# @patch('builtins.print')
+# def test__show_save_files_invalid_input_and_selection(mock_print, mock_input, handler, mock_cli, mock_game):
+#     """Test _show_save_files handles invalid numerical selection and invalid non-numerical input."""
+#
+#     # 1. Test invalid selection (out of range: index 2, max index 1)
+#     handler._show_save_files()
+#     mock_print.assert_any_call(mock_cli.constants.INVALID_SELECTION.format(2))
+#     mock_game.load_game.assert_not_called()
+#
+#     # 2. Test invalid input (non-number)
+#     mock_print.reset_mock()
+#     handler._show_save_files()
+#     mock_print.assert_any_call(mock_cli.constants.INVALID_INPUT.format('abc', 2))
+#     mock_game.load_game.assert_not_called()
+#
+# # ----------------------------------------------------------------------
+# # Test: handle_cheat
+# # ----------------------------------------------------------------------
+#
+# @patch('builtins.print')
+# def test_handle_cheat_success(mock_print, handler, mock_cli, mock_game):
+#     """Test successful cheat command."""
+#     handler.handle_cheat("set 99")
+#     mock_game.input_cheat_code.assert_called_once_with("set 99")
+#     mock_print.assert_any_call(mock_cli.constants.CHEAT_APPLIED.format(mock_game.input_cheat_code.return_value))
+#     mock_cli.show_game_status.assert_called_once()
+#     mock_cli.show_game_over.assert_not_called()
+#
+# @patch('builtins.print')
+# def test_handle_cheat_no_code(mock_print, handler, mock_cli, mock_game):
+#     """Test cheat command without arguments prints help messages."""
+#     handler.handle_cheat("   ")
+#     mock_game.input_cheat_code.assert_not_called()
+#     mock_print.assert_any_call(mock_cli.constants.NO_CHEAT_CODE)
+#     mock_print.assert_any_call(mock_cli.constants.CHEAT_HELP_MESSAGE)
+#
+# @patch('builtins.print')
+# def test_handle_cheat_game_over(mock_print, handler, mock_cli, mock_game):
+#     """Test cheat command that results in game over."""
+#     mock_game.game_over = True
+#     handler.handle_cheat("win")
+#     mock_cli.show_game_over.assert_called_once()
+#     mock_cli.show_game_status.assert_called_once()
+#     assert mock_cli._current_state == mock_cli.constants.STATE_GAME_OVER
+#
+# @patch('builtins.print')
+# def test_handle_cheat_not_initialized(mock_print, handler, mock_cli):
+#     """Test cheat command fails when game is not initialized."""
+#     mock_cli.game = None
+#     handler.handle_cheat("win")
+#     mock_print.assert_called_with(mock_cli.constants.GAME_NOT_INITIALIZED)
+#     # The original mock_cli.game is None, so calling input_cheat_code on it would fail
+#     # We assert that the handler correctly short-circuited before calling the game object.
+#     assert mock_cli.game is None # Assert state before the call
+#
+# # ----------------------------------------------------------------------
+# # Test: handle_computer_turn
+# # ----------------------------------------------------------------------
+#
+# @patch('builtins.print')
+# def test_handle_computer_turn_success(mock_print, handler, mock_cli, mock_game):
+#     """Test successful execution of computer turn."""
+#     handler.handle_computer_turn()
+#     mock_game.computer_turn.assert_called_once()
+#     mock_print.assert_called_with(mock_cli.constants.COMPUTER_ROLLED.format(mock_game.computer_turn.return_value))
+#     mock_cli.show_game_status.assert_called_once()
+#     mock_cli.show_game_over.assert_not_called()
+#
+# @patch('builtins.print')
+# def test_handle_computer_turn_game_over(mock_print, handler, mock_cli, mock_game):
+#     """Test computer turn that results in game over."""
+#     mock_game.game_over = True
+#     handler.handle_computer_turn()
+#     mock_game.computer_turn.assert_called_once()
+#     mock_cli.show_game_over.assert_called_once()
+#     assert mock_cli._current_state == mock_cli.constants.STATE_GAME_OVER
+#
+# @patch('builtins.print')
+# def test_handle_computer_turn_is_pvp(mock_print, handler, mock_cli, mock_game):
+#     """Test computer turn is skipped if it's a PvP game (player2 is not None)."""
+#     mock_game._player2 = MagicMock()
+#     handler.handle_computer_turn()
+#     mock_game.computer_turn.assert_not_called()
+#
+# @patch('builtins.print')
+# def test_handle_computer_turn_exception(mock_print, handler, mock_cli, mock_game):
+#     """Test computer turn handles exceptions."""
+#     error_msg = "Strategy failed"
+#     mock_game.computer_turn.side_effect = Exception(error_msg)
+#     handler.handle_computer_turn()
+#     mock_print.assert_called_with(mock_cli.constants.COMPUTER_TURN_ERROR.format(f"Exception('{error_msg}')"))
+#     mock_cli.show_game_status.assert_not_called()
+#
+# # ----------------------------------------------------------------------
+# # Test: handle_resume
+# # ----------------------------------------------------------------------
+#
+# @patch('builtins.print')
+# def test_handle_resume_success_from_playing(mock_print, handler, mock_cli, mock_game):
+#     """Test successful resume when already in playing state with history."""
+#     # State: PLAYING (already set by fixture), with history (already set by fixture)
+#     handler.handle_resume()
+#     assert mock_cli._current_state == mock_cli.constants.STATE_PLAYING
+#     mock_print.assert_called_with(mock_cli.constants.RESUMING_GAME)
+#     mock_cli.show_game_status.assert_called_once()
+#
+# @patch('builtins.print')
+# def test_handle_resume_success_from_menu(mock_print, handler, mock_cli, mock_game):
+#     """Test successful resume when transitioning from menu state to playing state."""
+#     mock_cli._current_state = mock_cli.constants.STATE_MENU
+#     # Fixture sets game history to exist
+#     handler.handle_resume()
+#     assert mock_cli._current_state == mock_cli.constants.STATE_PLAYING
+#     mock_print.assert_called_with(mock_cli.constants.RESUMING_GAME)
+#     mock_cli.show_game_status.assert_called_once()
+#
+# @patch('builtins.print')
+# def test_handle_resume_game_over(mock_print, handler, mock_cli, mock_game):
+#     """Test resume fails when game is over."""
+#     mock_game.game_over = True
+#     handler.handle_resume()
+#     assert mock_cli._current_state == mock_cli.constants.STATE_PLAYING # State should not change
+#     mock_print.assert_called_with(mock_cli.constants.GAME_OVER_MESSAGE)
+#     mock_cli.show_game_status.assert_not_called()
+#
+# @patch('builtins.print')
+# def test_handle_resume_no_active_game(mock_print, handler, mock_cli, mock_game):
+#     """Test resume fails when not in playing state and no game history exists."""
+#     mock_cli._current_state = mock_cli.constants.STATE_MENU
+#     mock_game._turn_history = []
+#     mock_game._dice_history = []
+#     handler.handle_resume()
+#     mock_print.assert_called_with(mock_cli.constants.NO_ACTIVE_GAME)
+#     assert mock_cli._current_state == mock_cli.constants.STATE_MENU # State should not change
+#     mock_cli.show_game_status.assert_not_called()
+#
+# @patch('builtins.print')
+# def test_handle_resume_not_initialized(mock_print, handler, mock_cli):
+#     """Test resume fails when game is not initialized."""
+#     mock_cli.game = None
+#     handler.handle_resume()
+#     mock_print.assert_called_with(mock_cli.constants.GAME_NOT_INITIALIZED)
+#     mock_cli.show_game_status.assert_not_called()

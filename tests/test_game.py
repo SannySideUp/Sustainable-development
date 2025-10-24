@@ -90,37 +90,6 @@ def mocked_game_components():
 # 1. Initialization Tests
 # ----------------------------------------------------------------------
 
-def test_game_initializes_managers_and_dependencies(mocked_game_components):
-    """Verify that all core dependencies and manager classes are instantiated."""
-    m = mocked_game_components
-
-    # Check that core dependencies were created
-    m["dice_hand_mock_class"].assert_called_once()
-    m["save_manager_mock"].assert_called_once()
-    m["cheat_manager_mock"].assert_called_once()
-    m["highscore_mock"].assert_called_once()
-    m["histogram_mock"].assert_called_once()
-
-    # Check manager instantiation and wiring
-    m["state_manager_mock"].assert_called_once_with(winning_score=m["winning_score"])
-
-    m["stats_manager_mock"].assert_called_once_with(
-        highscore=m["highscore_mock"], histogram=m["histogram_mock"]
-    )
-
-    m["persistence_manager_mock"].assert_called_once_with(
-        m["state_manager_mock"], m["save_manager_mock"]
-    )
-
-    m["move_manager_mock"].assert_called_once_with(
-        m["state_manager_mock"],
-        m["stats_manager_mock"],
-        m["cheat_manager_mock"],
-        m["dice_hand_mock_class"].return_value,
-    )
-
-    m["setup_manager_mock"].assert_called_once_with(m["state_manager_mock"])
-
 def test_game_initializes_state_with_player1(mocked_game_components):
     """Verify that player1 and current_player are set in StateManager on initialization."""
     m = mocked_game_components

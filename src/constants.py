@@ -30,6 +30,7 @@ STATE_SETTINGS = "settings"
 STATE_DIFFICULTY = "difficulty"
 STATE_STATISTICS = "statistics"
 STATE_HIGHSCORES = "highscores"
+STATE_GAME_OVER = "game_over"
 
 # Menu Headers
 PLAYER_NAME_SETUP_HEADER = "\n=== PLAYER NAME SETUP ==="
