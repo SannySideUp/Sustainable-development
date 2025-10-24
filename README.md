@@ -69,6 +69,16 @@ make uml
 This project supports **automatically generated HTML documentation** based on the Python docstrings and module structure.  
 The documentation is created using **Sphinx**, a popular documentation generator for Python projects.
 
+## 🧑‍💻 Development Notes
+
+The AI (DiceDifficulty) uses probabilistic dice lists (e.g., [3,4,5,6]) to bias results based on difficulty.
+
+Each mode simulates smarter risk-taking by reducing the chances of rolling 1.
+
+The main Game class uses DiceDifficulty.roll(mode) to decide AI moves.
+
+Tests mock dice behavior to ensure deterministic and full coverage.
+
 ### 🧠 Generating Documentation
 
 You can regenerate the documentation at any time by running:
