@@ -213,7 +213,7 @@ RETURNING_TO_MAIN = "Returning to main menu..."
 CANCEL_SETTING_NAME = "Cancel setting name"
 GO_BACK_TO_MAIN = "Go back to main menu if no name entered"
 
-DEFAULT_WINNING_SCORE = 15
+DEFAULT_WINNING_SCORE = 100
 DEFAULT_DIFFICULTY = "casual"
 
 # --- Menu Strings ---

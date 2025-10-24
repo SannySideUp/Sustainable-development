@@ -38,31 +38,32 @@ def test_add_various_keys(hist):
     assert sum(hist.counts.values()) == len(rolls)
 
 
-def test_show_handles_empty(capsys, hist):
-    """If no data, show() prints '(no data)' message."""
-    hist.show("Empty Histogram")
-    out = capsys.readouterr().out
-    assert "Empty Histogram" in out
-    assert "(no data)" in out
+def test_get_string_handles_empty(hist):
+    """If no data, get_string() returns the '(no data)' message."""
+    title = "Empty Histogram"
+    output_string = hist.get_string(title)
+
+    # Assert against the generated string content
+    assert title in output_string
+    assert "(no data)" in output_string
+    assert f"{title}: (no data)" in output_string  # Specific check based on implementation
 
 
-def test_show_prints_bars_for_data(capsys, hist):
-    """When data exists, show() prints the title, keys and bar characters."""
+def test_get_string_prints_bars_for_data(hist):
+    """When data exists, get_string() returns the title, keys and bar characters."""
     # Add data
     for v in [1, 2, 2, 5, 5, 5]:
         hist.add(v)
 
-    hist.show("Dice Rolls")
-    out = capsys.readouterr().out
+    title = "Dice Rolls"
+    output_string = hist.get_string(title)
 
-    # Title and keys should appear
-    assert "Dice Rolls" in out
-    assert " 1:" in out
-    assert " 2:" in out
-    assert " 5:" in out
+    assert title in output_string
+    assert " 1:" in output_string
+    assert " 2:" in output_string
+    assert " 5:" in output_string
 
-    # Bars use block characters — ensure at least one is present
-    assert "█" in out
-
-    # Counts are shown numerically (e.g. (3) for value 5)
-    assert "(3)" in out or "3" in out  # at least ensure numbers printed
+    assert "█" in output_string
+    assert " 1:    1 | " + "█" * 14 + " (1)" in output_string
+    assert " 2:    2 | " + "█" * 27 + " (2)" in output_string
+    assert " 5:    3 | " + "█" * 41 + " (3)" in output_string
