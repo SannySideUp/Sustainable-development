@@ -64,6 +64,33 @@ To generate UML diagrams, run the following command from the project root:
 make uml
 ```
 
+## 💻 Downloading and Running the Game
+
+## 📥 1. Clone the Repository
+
+If you have Git installed:
+
+```bash
+git clone https://github.com/<SannySideUp>/Sustainable-development-main.git
+cd Sustainable-development-main
+```
+
+## ⚙️ 2. Install Dependencies
+
+Use pip to install all required packages:
+
+```bash
+pip install -r requirements.txt
+```
+
+## 🏁 3. Run the Game
+
+From the project root directory, run:
+
+```bash
+python -m src.main
+```
+
 ## 📚 Code Documentation (HTML)
 
 This project supports **automatically generated HTML documentation** based on the Python docstrings and module structure.  
