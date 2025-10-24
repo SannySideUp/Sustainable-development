@@ -71,7 +71,7 @@ make uml
 If you have Git installed:
 
 ```bash
-git clone https://github.com/<SannySideUp>/Sustainable-development-main.git
+git clone https://github.com/<SannySideUp>/Sustainable-development.git
 cd Sustainable-development-main
 ```
 
