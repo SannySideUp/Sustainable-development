@@ -1,65 +1,20 @@
 {
-  "b2ce5bb6-4965-494b-bb5d-3e57a5957d3e": {
-    "name": "San",
-    "games_played": 0,
-    "wins": 0,
-    "losses": 0,
-    "total_score": 0,
-    "created": "2025-10-22T16:04:22.540116+00:00",
-    "last_played": "2025-10-22T16:04:22.540116+00:00"
-  },
-  "ed7e5f04-b438-4628-afca-011f6d325b9a": {
-    "name": "San",
-    "games_played": 1,
-    "wins": 0,
+  "335de2f3-7cea-4bfa-b43b-a0271d6c61fe": {
+    "name": "tony",
+    "games_played": 2,
+    "wins": 1,
     "losses": 1,
-    "total_score": 0,
-    "created": "2025-10-22T16:07:39.600826+00:00",
-    "last_played": "2025-10-22T16:08:37.148698+00:00"
+    "total_score": 100,
+    "created": "2025-10-22T15:51:16.135949+00:00",
+    "last_played": "2025-10-22T16:10:36.796108+00:00"
   },
   "computer": {
     "name": "Computer",
-    "games_played": 4,
-    "wins": 4,
-    "losses": 0,
-    "total_score": 461,
-    "created": "2025-10-22T16:08:37.148698+00:00",
-    "last_played": "2025-10-22T16:34:21.906960+00:00"
-  },
-  "e5c145b4-a919-4cca-8a16-d513e650fb2a": {
-    "name": "san",
-    "games_played": 1,
-    "wins": 0,
+    "games_played": 2,
+    "wins": 1,
     "losses": 1,
-    "total_score": 0,
-    "created": "2025-10-22T16:20:36.628059+00:00",
-    "last_played": "2025-10-22T16:22:24.932587+00:00"
-  },
-  "096ddf59-2d5a-4292-9ee5-01ca5a703d8e": {
-    "name": "san",
-    "games_played": 1,
-    "wins": 0,
-    "losses": 1,
-    "total_score": 35,
-    "created": "2025-10-22T16:26:38.265843+00:00",
-    "last_played": "2025-10-22T16:27:31.801452+00:00"
-  },
-  "434548a6-bb74-4536-8711-fdf87b6141d5": {
-    "name": "San",
-    "games_played": 1,
-    "wins": 0,
-    "losses": 1,
-    "total_score": 53,
-    "created": "2025-10-22T16:33:24.659385+00:00",
-    "last_played": "2025-10-22T16:34:21.906960+00:00"
-  },
-  "6cbbfc67-8707-44ae-b143-1549d4a45f1d": {
-    "name": "san",
-    "games_played": 0,
-    "wins": 0,
-    "losses": 0,
-    "total_score": 0,
-    "created": "2025-10-22T16:37:42.087002+00:00",
-    "last_played": "2025-10-22T16:37:42.087002+00:00"
+    "total_score": 138,
+    "created": "2025-10-22T16:08:42.085876+00:00",
+    "last_played": "2025-10-22T16:10:36.796108+00:00"
   }
 }
