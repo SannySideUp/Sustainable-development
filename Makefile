@@ -35,7 +35,7 @@ run:
 	"$(PY)" main.py
 
 test:
-	"$(PY)" -m pytest -v
+	PYTHONPATH="$(PWD)" pytest -v
 
 format:
 	"$(PIP)" install black
