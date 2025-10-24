@@ -21,4 +21,4 @@ jobs:
           pip install -r requirements.txt
 
       - name: Run Makefile checks
-        run: make check
+        run: make test
