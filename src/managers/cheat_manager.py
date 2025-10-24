@@ -37,7 +37,7 @@ class CheatManager:
             player.add_to_score(points_to_win)
             return (
                 True,
-                f"Cheat applied! {player.name} wins with {player.current_score} points!",
+                f"Cheat applied! Hold to win",
             )
 
         elif code == "BONUS5":
@@ -67,24 +67,10 @@ class CheatManager:
             else:
                 return False, f"Cheat code {code} requires game context (StateManager)."
 
-        # --- Informational Cheats ---
-        elif code == "LIST":
-            codes_text = "\n".join(
-                [f"  {code}: {desc}" for code, desc in self._cheat_codes.items()]
-            )
-            return False, f"Available cheat codes:\n{codes_text}"
-
-        elif code == "HELP":
-            # Assuming CHEAT_CODES is a string with help info
-            return (
-                False,
-                "Cheat Code Help (from CHEAT_CODES constant)",
-            )  # Placeholder for actual constant
-
         else:
             return (
                 False,
-                f"Invalid cheat code '{cheat_code}'. Type 'LIST' to see available codes or 'HELP' for help.",
+                f"Invalid cheat code '{cheat_code}'. Type 'cheat' without arguments to see available codes",
             )
 
     # NOTE: The input_cheat_code method from the old Game class should be implemented in the MenuController
