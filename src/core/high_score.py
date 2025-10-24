@@ -1,127 +1,170 @@
 import json
 import os
 from datetime import datetime, timezone
-from typing import List, Dict, Optional
+from typing import List, Dict, Tuple, Any
 
 HIGHSCORE_FILE = os.path.join(
-    os.path.dirname(__file__), '..', 'data', 'pig_highscore.json'
+    os.path.dirname(__file__), "..", "data", "pig_highscore.json"
 )
 
 
 class HighScore:
-    """Manages persistent high score / statistics JSON file.
-    Structure: { player_id: { 'name':..., 'games_played':n, 'wins':n, 'losses':n, 'total_score':n, 'created':date, 'last_played':date } }
-    """
+    """Manages persistent high score / statistics JSON file."""
+
     def __init__(self, filename=HIGHSCORE_FILE):
         self.filename = filename
-        self.data = {}
+        self.data: Dict[str, Dict[str, Any]] = {}
         self._load()
 
     def _load(self):
+        """Loads high score data from the JSON file."""
+        os.makedirs(os.path.dirname(self.filename), exist_ok=True)
         if os.path.exists(self.filename):
             try:
-                with open(self.filename, 'r', encoding='utf-8') as f:
-                    self.data = json.load(f)
-            except Exception:
-                print("Warning: could not read highscore file; starting fresh.")
+                with open(self.filename, "r") as f:
+                    content = f.read()
+                    self.data = json.loads(content) if content else {}
+            except json.JSONDecodeError:
+                print(
+                    f"Warning: HighScore file '{self.filename}' is corrupted. Starting with empty data."
+                )
+                self.data = {}
+            except Exception as e:
+                print(f"Error loading HighScore file: {e}. Starting with empty data.")
                 self.data = {}
         else:
             self.data = {}
 
     def _save(self):
+        """Saves the current high score data to the JSON file."""
+        os.makedirs(os.path.dirname(self.filename), exist_ok=True)
         try:
-            with open(self.filename, 'w', encoding='utf-8') as f:
-                json.dump(self.data, f, indent=2, ensure_ascii=False)
+            with open(self.filename, "w") as f:
+                json.dump(self.data, f, indent=4)
         except Exception as e:
-            print("Warning: could not save highscores:", e)
+            print(f"Error saving HighScore file: {e}")
 
-    def ensure_player(self, player):
-        """Ensure a player exists in the store. player is Player object."""
-        pid = player.player_id
-        if pid not in self.data:
-            now = datetime.now(timezone.utc).isoformat()
-            self.data[pid] = {
-                'name': player.name,
-                'games_played': 0,
-                'wins': 0,
-                'losses': 0,
-                'total_score': 0,
-                'created': now,
-                'last_played': now,
+    def _ensure_player(self, player_id: str, player_name: str) -> None:
+        """Ensures a player record exists, initializing it if necessary."""
+        if player_id not in self.data:
+            now_utc = datetime.now(timezone.utc).isoformat()
+            self.data[player_id] = {
+                "name": player_name,
+                "games_played": 0,
+                "wins": 0,
+                "losses": 0,
+                "total_score": 0,
+                "created": now_utc,
+                "last_played": now_utc,
+                "best_score": 0,
             }
-            self._save()
-        else:
-            # ensure name is up-to-date (but keep history under same id)
-            self.data[pid]['name'] = player.name
-            self._save()
 
-    def record_game(self, winner_player, loser_player, winner_score, loser_score):
-        now = datetime.now(timezone.utc).isoformat()
-        for p, won, sc_other in [(winner_player, True, loser_score), (loser_player, False, winner_score)]:
-            pid = p.player_id
-            if pid not in self.data:
-                # create if missing (maybe user changed machines)
-                self.data[pid] = {
-                    'name': p.name,
-                    'games_played': 0,
-                    'wins': 0,
-                    'losses': 0,
-                    'total_score': 0,
-                    'created': now,
-                    'last_played': now,
-                }
-            rec = self.data[pid]
-            rec['name'] = p.name
-            rec['games_played'] = rec.get('games_played', 0) + 1
-            if won:
-                rec['wins'] = rec.get('wins', 0) + 1
-            else:
-                rec['losses'] = rec.get('losses', 0) + 1
-            rec['total_score'] = rec.get('total_score', 0) + (winner_score if won else loser_score)
-            rec['last_played'] = now
+    def record_game(
+        self, winner: Any, loser: Any, winner_score: int, loser_score: int
+    ) -> None:
+        """
+        Records the results of a single game. This method was missing and caused the crash.
+
+        Args:
+            winner, loser: Objects expected to have 'player_id' and 'name'.
+            winner_score, loser_score: Final scores.
+        """
+        now_utc = datetime.now(timezone.utc).isoformat()
+
+        self._ensure_player(winner.player_id, winner.name)
+        w_rec = self.data[winner.player_id]
+
+        w_rec["games_played"] += 1
+        w_rec["wins"] += 1
+        w_rec["total_score"] += winner_score
+        w_rec["last_played"] = now_utc
+        if winner_score > w_rec.get("best_score", 0):
+            w_rec["best_score"] = winner_score
+
+        self._ensure_player(loser.player_id, loser.name)
+        l_rec = self.data[loser.player_id]
+
+        l_rec["games_played"] += 1
+        l_rec["losses"] += 1
+        l_rec["total_score"] += loser_score
+        l_rec["last_played"] = now_utc
+        if loser_score > l_rec.get("best_score", 0):
+            l_rec["best_score"] = loser_score
+
         self._save()
 
-    def change_player_name(self, player, new_name):
-        pid = player.player_id
-        if pid in self.data:
-            self.data[pid]['name'] = new_name
-            self._save()
-
-    def list_top(self, n=10):
-        # Sort by wins then winrate then average score
+    def list_top(self, n: int = 10) -> List[Tuple[str, Dict[str, Any]]]:
         def score_key(item):
             pid, rec = item
-            wins = rec.get('wins', 0)
-            games = rec.get('games_played', 1)
+            wins = rec.get("wins", 0)
+            games = rec.get("games_played", 1)
             winrate = wins / games if games else 0
-            avg_score = rec.get('total_score', 0) / games if games else 0
+            avg_score = rec.get("total_score", 0) / games if games else 0
             return (wins, winrate, avg_score)
+
         items = sorted(self.data.items(), key=score_key, reverse=True)
         return items[:n]
 
-    def find_by_name(self, name):
-        for pid, rec in self.data.items():
-            if rec.get('name', '').lower() == name.lower():
-                return pid, rec
-        return None, None
-
-    def show_all(self):
+    def get_scores_string(self) -> str:
         if not self.data:
-            print("No players yet.")
-            return
-        print("\nHigh-score / player stats:")
+            return "No players yet."
+
+        output = ["\n=== HIGH SCORES / PLAYER STATS ==="]
         rows = []
         for pid, rec in self.data.items():
-            games = rec.get('games_played', 0)
-            wins = rec.get('wins', 0)
-            losses = rec.get('losses', 0)
+            games = rec.get("games_played", 0)
+            wins = rec.get("wins", 0)
+            losses = rec.get("losses", 0)
             winrate = (wins / games * 100) if games else 0
-            avg = (rec.get('total_score', 0) / games) if games else 0
-            rows.append((rec.get('name','?'), pid, games, wins, losses, f"{winrate:.1f}%", f"{avg:.1f}"))
+            avg = (rec.get("total_score", 0) / games) if games else 0
+            rows.append(
+                (
+                    rec.get("name", "?"),
+                    pid,
+                    games,
+                    wins,
+                    losses,
+                    f"{winrate:.1f}%",
+                    f"{avg:.1f}",
+                )
+            )
+
         rows.sort(key=lambda r: (r[3], float(r[6])), reverse=True)
+
         header = " Name                        | Games | Wins | Losses | Win%  | Avg score | Player ID"
-        print(header)
-        print("-" * len(header))
+        output.append(header)
+        output.append("-" * len(header))
+
         for name, pid, games, wins, losses, winp, avg in rows:
-            print(f" {name:25} | {games:5} | {wins:4} | {losses:6} | {winp:5} | {avg:9} | {pid[:8]}")
-        print()
+            output.append(
+                f" {name:25} | {games:5} | {wins:4} | {losses:6} | {winp:5} | {avg:9} | {pid[:8]}"
+            )
+
+        output.append("\n")
+        return "\n".join(output)
+
+    def get_top_players_string(self, n: int = 10) -> str:
+        top_players = self.list_top(n)
+
+        if not top_players:
+            return "No player scores available."
+
+        result = "Top Player Scores (Ranked by Wins, Win%, Avg Score):\n"
+        result += "=" * 70 + "\n"
+
+        for i, (pid, rec) in enumerate(top_players, 1):
+            name = rec.get("name", "Unknown")
+            wins = rec.get("wins", 0)
+            games = rec.get("games_played", 0)
+            winrate = (wins / games * 100) if games else 0
+            avg_score = rec.get("total_score", 0) / games if games else 0
+
+            result += f"{i:2}. {name:20} | Wins: {wins:3} | Games: {games:3} | Win%: {winrate:5.1f}% | Avg: {avg_score:6.1f}\n"
+
+        return result
+
+    def clear_high_scores(self) -> str:
+        """Clears high scores and returns a status message."""
+        self.data = {}
+        self._save()
+        return "High scores cleared successfully."

@@ -27,6 +27,7 @@ class DummyPlayer:
         player_id (str): Unique ID for the player.
         name (str): Display name of the player.
     """
+
     def __init__(self, player_id, name):
         self.player_id = player_id
         self.name = name

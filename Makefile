@@ -7,11 +7,10 @@ format:
 
 test:
 	@echo "Running Pytest..."
-	PYTHONPATH=$(PWD) pytest -v
+	PYTHONPATH="$(PWD)" pytest -v
 
 check:
 	@echo "Running formatting and tests..."
-	make format
 	make test
 	@echo "All checks passed successfully."
 

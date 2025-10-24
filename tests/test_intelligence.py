@@ -1,4 +1,3 @@
-
 import pytest
 
 from src.core.intelligence import DiceDifficulty
@@ -15,18 +14,22 @@ ROLL_COUNTS = {
     "legendary": 12,
 }
 
+
 def patch_mode_with_sequence(dice: DiceDifficulty, mode: str, sequence, monkeypatch):
     """
     Replace the <mode>() method on DiceDifficulty with a version that yields
     from a fixed sequence, to make tests deterministic.
     """
     it = iter(sequence)
+
     def fake_mode():
         return next(it)
+
     monkeypatch.setattr(dice, mode, fake_mode)
 
 
 # --- fixtures --------------------------------------------------------------
+
 
 @pytest.fixture
 def dice():
@@ -34,6 +37,7 @@ def dice():
 
 
 # --- tests -----------------------------------------------------------------
+
 
 def test_available_difficulties(dice):
     expected = ["noob", "casual", "challenger", "veteran", "elite", "legendary"]
@@ -69,7 +73,9 @@ def test_challenger_returns_1_when_bust(dice, monkeypatch):
     assert total == 1  # signal to main game that turn busted
 
 
-@pytest.mark.parametrize("mode", ["noob","casual","challenger","veteran","elite","legendary"])
+@pytest.mark.parametrize(
+    "mode", ["noob", "casual", "challenger", "veteran", "elite", "legendary"]
+)
 def test_each_mode_roll_count_when_safe(dice, monkeypatch, mode):
     """
     For each difficulty, if no roll is 1, the method should perform exactly
@@ -81,14 +87,17 @@ def test_each_mode_roll_count_when_safe(dice, monkeypatch, mode):
     assert total == 2 * ROLL_COUNTS[mode]
 
 
-@pytest.mark.parametrize("mode, bust_index", [
-    ("noob", 1),          # 2 rolls max → bust on 1st or 2nd is enough
-    ("casual", 3),        # 4 rolls max → bust on 3rd
-    ("challenger", 4),    # 6 rolls max → bust on 4th
-    ("veteran", 5),       # 8 rolls max → bust on 5th
-    ("elite", 6),         # 10 rolls max → bust on 6th
-    ("legendary", 9),     # 12 rolls max → bust on 9th
-])
+@pytest.mark.parametrize(
+    "mode, bust_index",
+    [
+        ("noob", 1),  # 2 rolls max → bust on 1st or 2nd is enough
+        ("casual", 3),  # 4 rolls max → bust on 3rd
+        ("challenger", 4),  # 6 rolls max → bust on 4th
+        ("veteran", 5),  # 8 rolls max → bust on 5th
+        ("elite", 6),  # 10 rolls max → bust on 6th
+        ("legendary", 9),  # 12 rolls max → bust on 9th
+    ],
+)
 def test_bust_early_stops_and_returns_1(dice, monkeypatch, mode, bust_index):
     """
     Ensure that when a 1 appears before the mode's max rolls,

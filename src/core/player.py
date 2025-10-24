@@ -8,17 +8,18 @@ Each player has a name and current score.
 from typing import Optional
 import uuid
 
+
 class Player:
     """
     Represents a player in the Pig dice game.
-    
+
     A player has a name and current score.
     """
 
     def __init__(self, name: str = "Player"):
         """
         Initialize a new player.
-        
+
         Args:
             name (str): The player's name. Defaults to "Player".
         """
@@ -35,7 +36,7 @@ class Player:
     def name(self, new_name: str) -> None:
         """
         Set a new name for the player.
-        
+
         Args:
             new_name (str): The new name for the player.
         """
@@ -47,10 +48,10 @@ class Player:
     def set_name_safely(self, new_name: str) -> bool:
         """
         Set a new name for the player safely.
-        
+
         Args:
             new_name (str): The new name for the player.
-            
+
         Returns:
             bool: True if name was set successfully, False otherwise.
         """
@@ -61,13 +62,13 @@ class Player:
             return False
 
     @classmethod
-    def create_player_with_name(cls, name: str) -> Optional['Player']:
+    def create_player_with_name(cls, name: str) -> Optional["Player"]:
         """
         Create a new player with the given name safely.
-        
+
         Args:
             name (str): The name for the new player.
-            
+
         Returns:
             Optional[Player]: New Player instance if name is valid, None otherwise.
         """
@@ -84,7 +85,7 @@ class Player:
     def add_to_score(self, points: int) -> None:
         """
         Add points to the player's current score.
-        
+
         Args:
             points (int): The points to add to the current score.
         """
@@ -99,7 +100,7 @@ class Player:
     def set_score(self, score: int) -> None:
         """
         Set the player's current score directly.
-        
+
         Args:
             score (int): The new score for the player.
         """

@@ -18,6 +18,7 @@ def main():
         print(GAME_INTERRUPTED)
     except Exception as e:
         print(f"Error: {e}")
+        raise e
         sys.exit(1)
 
 

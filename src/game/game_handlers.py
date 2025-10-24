@@ -6,6 +6,7 @@ This module contains all the game-related command functionality separated from t
 
 from src.constants import *
 
+
 class GameHandlers:
     """Handles all game commands for the Pig Dice Game CLI."""
 
@@ -33,24 +34,24 @@ class GameHandlers:
         """Handle roll command."""
         if not self._check_playing_state():
             return
-        self._execute_player_move('roll')
+        self._execute_player_move("roll")
 
     def handle_hold(self) -> None:
         """Handle hold command."""
         if not self._check_playing_state():
             return
-        self._execute_player_move('hold')
+        self._execute_player_move("hold")
 
     def _execute_player_move(self, move: str) -> None:
         """Execute a player move ('roll' or 'hold') and update the game status."""
         try:
             result, roll_or_message = self.cli.game.execute_move(move)
-            if move == 'roll':
+            if move == "roll":
                 print(ROLLED_MESSAGE.format(roll_or_message))
             else:
                 print(HOLD_MESSAGE.format(result))
 
-            print(result if move == 'roll' else '')
+            print(result if move == "roll" else "")
             self.cli.show_game_status()
 
             if self.cli.game.game_over:
@@ -157,9 +158,11 @@ class GameHandlers:
             print(GAME_OVER_MESSAGE)
             return
 
-        if (self.cli._current_state != STATE_PLAYING and 
-            not self.cli.game._turn_history and 
-            not self.cli.game._dice_history):
+        if (
+            self.cli._current_state != STATE_PLAYING
+            and not self.cli.game._turn_history
+            and not self.cli.game._dice_history
+        ):
             print(NO_ACTIVE_GAME)
             return
 

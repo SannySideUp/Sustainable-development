@@ -2,15 +2,18 @@ import pytest
 from collections import Counter
 from src.core.histogram import Histogram
 
+
 @pytest.fixture
 def hist():
     return Histogram()
+
 
 def test_initial_counts_empty(hist):
     """counts should be a Counter and initially empty."""
     assert isinstance(hist.counts, Counter)
     assert sum(hist.counts.values()) == 0
     assert len(hist.counts) == 0
+
 
 def test_add_increments_counts(hist):
     """Calling add should increment the Counter for that value."""
@@ -21,6 +24,7 @@ def test_add_increments_counts(hist):
     assert hist.counts[3] == 2
     assert hist.counts[5] == 1
     assert sum(hist.counts.values()) == 3
+
 
 def test_add_various_keys(hist):
     """Histogram should accept multiple distinct keys."""
@@ -33,12 +37,14 @@ def test_add_various_keys(hist):
     assert hist.counts[6] == 3
     assert sum(hist.counts.values()) == len(rolls)
 
+
 def test_show_handles_empty(capsys, hist):
     """If no data, show() prints '(no data)' message."""
     hist.show("Empty Histogram")
     out = capsys.readouterr().out
     assert "Empty Histogram" in out
     assert "(no data)" in out
+
 
 def test_show_prints_bars_for_data(capsys, hist):
     """When data exists, show() prints the title, keys and bar characters."""
