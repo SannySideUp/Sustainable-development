@@ -64,10 +64,47 @@ To generate UML diagrams, run the following command from the project root:
 make uml
 ```
 
+## 💻 Downloading and Running the Game
+
+## 📥 1. Clone the Repository
+
+If you have Git installed:
+
+```bash
+git clone https://github.com/<SannySideUp>/Sustainable-development-main.git
+cd Sustainable-development-main
+```
+
+## ⚙️ 2. Install Dependencies
+
+Use pip to install all required packages:
+
+```bash
+pip install -r requirements.txt
+```
+
+## 🏁 3. Run the Game
+
+From the project root directory, run:
+
+```bash
+python main.py
+```
+
 ## 📚 Code Documentation (HTML)
 
 This project supports **automatically generated HTML documentation** based on the Python docstrings and module structure.  
 The documentation is created using **Sphinx**, a popular documentation generator for Python projects.
+
+## 🧑‍💻 Development Notes
+
+The AI (DiceDifficulty) uses probabilistic dice lists (e.g., [3,4,5,6]) to bias results based on difficulty.
+
+Each mode simulates smarter risk-taking by reducing the chances of rolling 1.
+
+The main Game class uses DiceDifficulty.roll(mode) to decide AI moves.
+
+Tests mock dice behavior to ensure deterministic and full coverage.
 
 ### 🧠 Generating Documentation
 
