@@ -88,7 +88,7 @@ pip install -r requirements.txt
 From the project root directory, run:
 
 ```bash
-python -m src.main
+python main.py
 ```
 
 ## 📚 Code Documentation (HTML)
